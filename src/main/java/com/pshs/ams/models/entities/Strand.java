@@ -1,12 +1,17 @@
 package com.pshs.ams.models.entities;
 
+import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 @Entity
 @Table(name = "strands")
-public class Strand {
+public class Strand extends PanacheEntityBase {
 	@Id
 	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "strands_id_gen")
 	@SequenceGenerator(name = "strands_id_gen", sequenceName = "strands_id_seq", allocationSize = 1)
@@ -20,32 +25,4 @@ public class Strand {
 
 	@Column(name = "description", length = Integer.MAX_VALUE)
 	private String description;
-
-	public Integer getId() {
-		return id;
-	}
-
-	public Strand setId(Integer id) {
-		this.id = id;
-		return this;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public Strand setName(String name) {
-		this.name = name;
-		return this;
-	}
-
-	public String getDescription() {
-		return description;
-	}
-
-	public Strand setDescription(String description) {
-		this.description = description;
-		return this;
-	}
-
 }

@@ -1,14 +1,19 @@
 package com.pshs.ams.models.entities;
 
+import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
+@Getter
+@Setter
 @Entity
 @Table(name = "rfid_credentials")
-public class RfidCredential {
+public class RfidCredential extends PanacheEntityBase {
 	@Id
 	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "rfid_credentials_id_gen")
 	@SequenceGenerator(name = "rfid_credentials_id_gen", sequenceName = "rfid_credentials_id_seq", allocationSize = 1)
@@ -30,41 +35,4 @@ public class RfidCredential {
 	@NotNull
 	@Column(name = "salt", nullable = false, length = 16)
 	private String salt;
-
-	public Integer getId() {
-		return id;
-	}
-
-	public RfidCredential setId(Integer id) {
-		this.id = id;
-		return this;
-	}
-
-	public Student getStudent() {
-		return student;
-	}
-
-	public RfidCredential setStudent(Student student) {
-		this.student = student;
-		return this;
-	}
-
-	public String getHashedLrn() {
-		return hashedLrn;
-	}
-
-	public RfidCredential setHashedLrn(String hashedLrn) {
-		this.hashedLrn = hashedLrn;
-		return this;
-	}
-
-	public String getSalt() {
-		return salt;
-	}
-
-	public RfidCredential setSalt(String salt) {
-		this.salt = salt;
-		return this;
-	}
-
 }

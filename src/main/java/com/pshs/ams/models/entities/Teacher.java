@@ -1,16 +1,21 @@
 package com.pshs.ams.models.entities;
 
+import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.Instant;
 
+@Getter
+@Setter
 @Entity
 @Table(name = "teachers")
-public class Teacher {
+public class Teacher extends PanacheEntityBase {
 	@Id
 	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "teachers_id_gen")
 	@SequenceGenerator(name = "teachers_id_gen", sequenceName = "teachers_id_seq", allocationSize = 1)
@@ -45,7 +50,7 @@ public class Teacher {
 	private String sex;
 
 	@Size(max = 128)
-	@Column(name = "\"position\"", length = 128)
+	@Column(name = "position", length = 128)
 	private String position;
 
 	@OneToOne(fetch = FetchType.LAZY)
@@ -60,113 +65,4 @@ public class Teacher {
 	@ColumnDefault("CURRENT_TIMESTAMP")
 	@Column(name = "updated_at")
 	private Instant updatedAt;
-
-	public Integer getId() {
-		return id;
-	}
-
-	public Teacher setId(Integer id) {
-		this.id = id;
-		return this;
-	}
-
-	public String getFirstName() {
-		return firstName;
-	}
-
-	public Teacher setFirstName(String firstName) {
-		this.firstName = firstName;
-		return this;
-	}
-
-	public String getLastName() {
-		return lastName;
-	}
-
-	public Teacher setLastName(String lastName) {
-		this.lastName = lastName;
-		return this;
-	}
-
-	public String getMiddleInitial() {
-		return middleInitial;
-	}
-
-	public Teacher setMiddleInitial(String middleInitial) {
-		this.middleInitial = middleInitial;
-		return this;
-	}
-
-	public Integer getAge() {
-		return age;
-	}
-
-	public Teacher setAge(Integer age) {
-		this.age = age;
-		return this;
-	}
-
-	public String getContactNumber() {
-		return contactNumber;
-	}
-
-	public Teacher setContactNumber(String contactNumber) {
-		this.contactNumber = contactNumber;
-		return this;
-	}
-
-	public String getEmergencyContact() {
-		return emergencyContact;
-	}
-
-	public Teacher setEmergencyContact(String emergencyContact) {
-		this.emergencyContact = emergencyContact;
-		return this;
-	}
-
-	public String getSex() {
-		return sex;
-	}
-
-	public Teacher setSex(String sex) {
-		this.sex = sex;
-		return this;
-	}
-
-	public String getPosition() {
-		return position;
-	}
-
-	public Teacher setPosition(String position) {
-		this.position = position;
-		return this;
-	}
-
-	public User getUser() {
-		return user;
-	}
-
-	public Teacher setUser(User user) {
-		this.user = user;
-		return this;
-	}
-
-	public Instant getCreatedAt() {
-		return createdAt;
-	}
-
-	public Teacher setCreatedAt(Instant createdAt) {
-		this.createdAt = createdAt;
-		return this;
-	}
-
-	public Instant getUpdatedAt() {
-		return updatedAt;
-	}
-
-	public Teacher setUpdatedAt(Instant updatedAt) {
-		this.updatedAt = updatedAt;
-		return this;
-	}
-
 }

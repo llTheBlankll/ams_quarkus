@@ -1,15 +1,20 @@
 package com.pshs.ams.models.entities;
 
+import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+@Getter
+@Setter
 @Entity
 @Table(name = "guardians")
-public class Guardian {
+public class Guardian extends PanacheEntityBase {
 	@Id
 	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "guardians_id_gen")
 	@SequenceGenerator(name = "guardians_id_gen", sequenceName = "guardians_id_seq", allocationSize = 1)
@@ -27,41 +32,4 @@ public class Guardian {
 
 	@OneToMany(mappedBy = "guardian")
 	private Set<Student> students = new LinkedHashSet<>();
-
-	public Integer getId() {
-		return id;
-	}
-
-	public Guardian setId(Integer id) {
-		this.id = id;
-		return this;
-	}
-
-	public String getFullName() {
-		return fullName;
-	}
-
-	public Guardian setFullName(String fullName) {
-		this.fullName = fullName;
-		return this;
-	}
-
-	public String getContactNumber() {
-		return contactNumber;
-	}
-
-	public Guardian setContactNumber(String contactNumber) {
-		this.contactNumber = contactNumber;
-		return this;
-	}
-
-	public Set<Student> getStudents() {
-		return students;
-	}
-
-	public Guardian setStudents(Set<Student> students) {
-		this.students = students;
-		return this;
-	}
-
 }

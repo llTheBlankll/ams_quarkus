@@ -1,15 +1,20 @@
 package com.pshs.ams.models.entities;
 
+import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
 
+@Getter
+@Setter
 @Entity
 @Table(name = "grade_levels")
-public class GradeLevel {
+public class GradeLevel extends PanacheEntityBase {
 	@Id
 	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "grade_levels_id_gen")
 	@SequenceGenerator(name = "grade_levels_id_gen", sequenceName = "grade_levels_id_seq", allocationSize = 1)
@@ -33,50 +38,4 @@ public class GradeLevel {
 	@ColumnDefault("CURRENT_TIMESTAMP")
 	@Column(name = "updated_at", nullable = false)
 	private Instant updatedAt;
-
-	public Integer getId() {
-		return id;
-	}
-
-	public GradeLevel setId(Integer id) {
-		this.id = id;
-		return this;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public GradeLevel setName(String name) {
-		this.name = name;
-		return this;
-	}
-
-	public String getDescription() {
-		return description;
-	}
-
-	public GradeLevel setDescription(String description) {
-		this.description = description;
-		return this;
-	}
-
-	public Instant getCreatedAt() {
-		return createdAt;
-	}
-
-	public GradeLevel setCreatedAt(Instant createdAt) {
-		this.createdAt = createdAt;
-		return this;
-	}
-
-	public Instant getUpdatedAt() {
-		return updatedAt;
-	}
-
-	public GradeLevel setUpdatedAt(Instant updatedAt) {
-		this.updatedAt = updatedAt;
-		return this;
-	}
-
 }
