@@ -1,5 +1,6 @@
 package com.pshs.ams.services.impl;
 
+import com.pshs.ams.models.entities.GradeLevel;
 import com.pshs.ams.models.entities.Guardian;
 import com.pshs.ams.models.enums.CodeStatus;
 import com.pshs.ams.services.GuardianService;
@@ -8,6 +9,7 @@ import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import java.util.List;
+import java.util.Optional;
 
 @ApplicationScoped
 public class GuardianServiceImpl implements GuardianService {
@@ -20,7 +22,7 @@ public class GuardianServiceImpl implements GuardianService {
 	 */
 	@Override
 	public List<Guardian> getAllGuardian(Sort sort, Page page) {
-		return List.of();
+		return GradeLevel.findAll(sort).page(page).list();
 	}
 
 	/**
@@ -30,8 +32,8 @@ public class GuardianServiceImpl implements GuardianService {
 	 * @return the retrieved {@link Guardian} or {@code null} if no such {@link Guardian} exists
 	 */
 	@Override
-	public Guardian getGuardianById(Integer id) {
-		return null;
+	public Optional<Guardian> getGuardianById(Integer id) {
+		return Guardian.findByIdOptional(id);
 	}
 
 	/**
@@ -41,8 +43,19 @@ public class GuardianServiceImpl implements GuardianService {
 	 * @return the created {@link Guardian}
 	 */
 	@Override
-	public Guardian createGuardian(Guardian guardian) {
-		return null;
+	public CodeStatus createGuardian(Guardian guardian) {
+		// The id should be null
+		if (guardian.getId() != null) {
+			return CodeStatus.BAD_REQUEST;
+		}
+
+		// Check if exists
+		if (Guardian.find("name", guardian.getFullName()).count() > 0) {
+			return CodeStatus.EXISTS;
+		}
+
+		guardian.persist();
+		return CodeStatus.OK;
 	}
 
 	/**
@@ -53,7 +66,18 @@ public class GuardianServiceImpl implements GuardianService {
 	 */
 	@Override
 	public CodeStatus updateGuardian(Guardian guardian) {
-		return null;
+		// The id should not be null
+		if (guardian.getId() == null) {
+			return CodeStatus.BAD_REQUEST;
+		}
+
+		// Check if exists
+		if (Guardian.find("name", guardian.getFullName()).count() > 0) {
+			return CodeStatus.EXISTS;
+		}
+
+		guardian.update();
+		return CodeStatus.OK;
 	}
 
 	/**

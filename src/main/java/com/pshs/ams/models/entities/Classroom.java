@@ -1,5 +1,6 @@
 package com.pshs.ams.models.entities;
 
+import com.pshs.ams.models.interfaces.AttendanceForeignEntity;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -18,7 +19,7 @@ import java.util.Set;
 @Setter
 @Entity
 @Table(name = "classrooms")
-public class Classroom extends PanacheEntityBase {
+public class Classroom extends PanacheEntityBase implements AttendanceForeignEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "classrooms_id_gen")
 	@SequenceGenerator(name = "classrooms_id_gen", sequenceName = "classrooms_id_seq", allocationSize = 1)

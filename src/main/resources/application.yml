@@ -6,3 +6,5 @@
     password: ${DB_PASS}
   log:
     level: DEBUG
+    console:
+      async: true

@@ -6,6 +6,7 @@ import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface GradeLevelService {
 	/**
@@ -47,7 +48,7 @@ public interface GradeLevelService {
 	 * @param name the name of the grade level to retrieve
 	 * @return the retrieved GradeLevel object
 	 */
-	GradeLevel getGradeLevelByName(String name);
+	Optional<GradeLevel> getGradeLevelByName(String name);
 
 	/**
 	 * Retrieves a list of grade levels whose name contains the given string.

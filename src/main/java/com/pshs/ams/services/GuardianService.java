@@ -1,12 +1,12 @@
 package com.pshs.ams.services;
 
-import com.pshs.ams.models.entities.GradeLevel;
 import com.pshs.ams.models.entities.Guardian;
 import com.pshs.ams.models.enums.CodeStatus;
 import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface GuardianService {
 
@@ -25,7 +25,7 @@ public interface GuardianService {
 	 * @param id the id of the {@link Guardian} to retrieve
 	 * @return the retrieved {@link Guardian} or {@code null} if no such {@link Guardian} exists
 	 */
-	Guardian getGuardianById(Integer id);
+	Optional<Guardian> getGuardianById(Integer id);
 
 
 	/**
@@ -34,7 +34,7 @@ public interface GuardianService {
 	 * @param guardian the {@link Guardian} entity to create
 	 * @return the created {@link Guardian}
 	 */
-	Guardian createGuardian(Guardian guardian);
+	CodeStatus createGuardian(Guardian guardian);
 
 	/**
 	 * Updates the {@link Guardian} with the given {@code id} based on the given {@link Guardian} entity.

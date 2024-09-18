@@ -21,7 +21,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @NoArgsConstructor
 @Accessors(chain = true)
-public class StudentDTO implements Serializable, AttendanceForeignEntity {
+public class StudentDTO implements Serializable {
 	private Long id;
 	@NotNull
 	@Size(max = 128)

@@ -20,7 +20,7 @@ import java.time.LocalTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Accessors(chain = true)
-public class AttendanceDTO implements Serializable, AttendanceForeignEntity {
+public class AttendanceDTO implements Serializable {
 	private Integer id;
 	@NotNull
 	private AttendanceStatus status;

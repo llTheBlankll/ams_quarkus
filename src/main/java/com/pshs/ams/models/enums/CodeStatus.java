@@ -5,5 +5,6 @@ public enum CodeStatus {
 	FAILED,
 	BAD_REQUEST,
 	NOT_FOUND,
-	NULL
+	NULL,
+	EXISTS
 }

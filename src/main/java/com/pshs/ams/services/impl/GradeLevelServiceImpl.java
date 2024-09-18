@@ -8,6 +8,7 @@ import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import java.util.List;
+import java.util.Optional;
 
 @ApplicationScoped
 public class GradeLevelServiceImpl implements GradeLevelService {
@@ -20,7 +21,7 @@ public class GradeLevelServiceImpl implements GradeLevelService {
 	 */
 	@Override
 	public List<GradeLevel> getAllGradeLevel(Sort sort, Page page) {
-		return List.of();
+		return GradeLevel.findAll(sort).page(page).list();
 	}
 
 	/**
@@ -31,7 +32,7 @@ public class GradeLevelServiceImpl implements GradeLevelService {
 	 */
 	@Override
 	public GradeLevel getGradeLevelById(Integer id) {
-		return null;
+		return GradeLevel.findById(id);
 	}
 
 	/**
@@ -42,7 +43,19 @@ public class GradeLevelServiceImpl implements GradeLevelService {
 	 */
 	@Override
 	public CodeStatus createGradeLevel(GradeLevel gradeLevel) {
-		return null;
+		// When creating grade level, the id should be null
+		if (gradeLevel.getId() != null) {
+			return CodeStatus.BAD_REQUEST;
+		}
+
+		// Check if the grade level already exists
+		Optional<GradeLevel> existingGradeLevel = GradeLevel.find("name", gradeLevel.getName()).firstResultOptional();
+		if (existingGradeLevel.isPresent()) {
+			return CodeStatus.EXISTS;
+		}
+
+		gradeLevel.persist();
+		return CodeStatus.OK;
 	}
 
 	/**
@@ -53,7 +66,14 @@ public class GradeLevelServiceImpl implements GradeLevelService {
 	 */
 	@Override
 	public CodeStatus deleteGradeLevel(Integer id) {
-		return null;
+		// Check if exists
+		Optional<GradeLevel> existingGradeLevel = GradeLevel.findByIdOptional(id);
+		if (existingGradeLevel.isEmpty()) {
+			return CodeStatus.NOT_FOUND;
+		}
+
+		existingGradeLevel.get().delete();
+		return CodeStatus.OK;
 	}
 
 	/**
@@ -63,8 +83,8 @@ public class GradeLevelServiceImpl implements GradeLevelService {
 	 * @return the retrieved GradeLevel object
 	 */
 	@Override
-	public GradeLevel getGradeLevelByName(String name) {
-		return null;
+	public Optional<GradeLevel> getGradeLevelByName(String name) {
+		return GradeLevel.find("name", name).firstResultOptional();
 	}
 
 	/**
@@ -75,6 +95,10 @@ public class GradeLevelServiceImpl implements GradeLevelService {
 	 */
 	@Override
 	public List<GradeLevel> searchGradeLevelByName(String name) {
-		return List.of();
+		if (name.isEmpty()) {
+			return List.of();
+		}
+
+		return GradeLevel.find("name like ?1", "%" + name + "%").list();
 	}
 }

@@ -3,6 +3,7 @@ package com.pshs.ams.services;
 import com.pshs.ams.models.dto.attendance.AttendanceDTO;
 import com.pshs.ams.models.dto.custom.DateRange;
 import com.pshs.ams.models.dto.custom.LineChartDTO;
+import com.pshs.ams.models.entities.Attendance;
 import com.pshs.ams.models.enums.AttendanceStatus;
 import com.pshs.ams.models.enums.Sex;
 import com.pshs.ams.models.enums.TimeStack;
@@ -10,7 +11,6 @@ import com.pshs.ams.models.interfaces.AttendanceForeignEntity;
 import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
 
-import java.time.LocalDate;
 import java.util.List;
 
 public interface AttendanceService {
@@ -21,7 +21,7 @@ public interface AttendanceService {
 	 * @param attendanceStatus Attendance Status
 	 * @return total count of attendance
 	 */
-	long countTotalByAttendanceByStatus(AttendanceStatus attendanceStatus, DateRange dateRange);
+	long countTotalByAttendanceByStatus(List<AttendanceStatus> attendanceStatus, DateRange dateRange);
 
 	/**
 	 * Count total attendance of each status with a foreign entity filter
@@ -31,7 +31,7 @@ public interface AttendanceService {
 	 * @param foreignEntity    the foreign entity to filter by
 	 * @return total count of attendance
 	 */
-	long countTotalByAttendanceByStatus(AttendanceStatus attendanceStatus, DateRange dateRange, AttendanceForeignEntity foreignEntity);
+	long countTotalByAttendanceByStatus(List<AttendanceStatus> attendanceStatus, DateRange dateRange, AttendanceForeignEntity foreignEntity);
 
 	// Region: Get All Attendance
 
@@ -42,7 +42,7 @@ public interface AttendanceService {
 	 * @param dateRange        range of dates to filter by
 	 * @return list of {@link AttendanceDTO} objects
 	 */
-	List<AttendanceDTO> getAllAttendanceByStatusAndDateRange(AttendanceStatus attendanceStatus, DateRange dateRange, Page page, Sort sort);
+	List<Attendance> getAllAttendanceByStatusAndDateRange(List<AttendanceStatus> attendanceStatus, DateRange dateRange, Page page, Sort sort);
 
 	/**
 	 * Get all attendance by status, date range, and foreign entity
@@ -52,7 +52,7 @@ public interface AttendanceService {
 	 * @param foreignEntity    the foreign entity to filter by
 	 * @return list of {@link AttendanceDTO} objects
 	 */
-	List<AttendanceDTO> getAllAttendanceByStatusAndDateRange(AttendanceStatus attendanceStatus, DateRange dateRange, AttendanceForeignEntity foreignEntity, Page page, Sort sort);
+	List<Attendance> getAllAttendanceByStatusAndDateRange(List<AttendanceStatus> attendanceStatus, DateRange dateRange, AttendanceForeignEntity foreignEntity, Page page, Sort sort);
 
 	/**
 	 * Get line chart data
@@ -63,7 +63,7 @@ public interface AttendanceService {
 	 * @param stack         the time stack to group by
 	 * @return list of {@link LineChartDTO} objects
 	 */
-	List<LineChartDTO> getLineChart(List<AttendanceStatus> statuses, DateRange dateRange, AttendanceForeignEntity foreignEntity, TimeStack stack);
+	LineChartDTO getLineChart(List<AttendanceStatus> statuses, DateRange dateRange, AttendanceForeignEntity foreignEntity, TimeStack stack);
 
 
 	/**
@@ -101,7 +101,7 @@ public interface AttendanceService {
 	 * @param studentId student id
 	 * @return list of attendance
 	 */
-	List<AttendanceDTO> getAllStudentAttendance(Long studentId, Page page);
+	List<Attendance> getAllStudentAttendance(Long studentId, Page page);
 
 	/**
 	 * Get total student attendance
