@@ -1,5 +1,7 @@
 package com.pshs.ams.models.entities;
 
+import com.pshs.ams.models.enums.AttendanceStatus;
+import com.pshs.ams.models.enums.Sex;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -39,6 +41,10 @@ public class Student extends PanacheEntityBase {
 	@Column(name = "address", length = Integer.MAX_VALUE)
 	private String address;
 
+	@Column(name = "sex", columnDefinition = "sex not null")
+	@Enumerated(EnumType.STRING)
+	private Sex sex;
+
 	@NotNull
 	@Column(name = "birthdate", nullable = false)
 	private LocalDate birthdate;
@@ -67,11 +73,4 @@ public class Student extends PanacheEntityBase {
 	@OnDelete(action = OnDeleteAction.SET_NULL)
 	@JoinColumn(name = "student_schedule_id")
 	private StudentSchedule studentSchedule;
-
-/*
- TODO [Reverse Engineering] create field to map the 'sex' column
- Available actions: Define target Java type | Uncomment as is | Remove column mapping
-    @Column(name = "sex", columnDefinition = "sex not null")
-    private Object sex;
-*/
 }

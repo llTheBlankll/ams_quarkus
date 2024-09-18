@@ -1,5 +1,6 @@
 package com.pshs.ams.models.entities;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
@@ -56,6 +57,7 @@ public class Teacher extends PanacheEntityBase {
 	@OneToOne(fetch = FetchType.LAZY)
 	@OnDelete(action = OnDeleteAction.SET_NULL)
 	@JoinColumn(name = "user_id")
+	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
 	private User user;
 
 	@ColumnDefault("CURRENT_TIMESTAMP")

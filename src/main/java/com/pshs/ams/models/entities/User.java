@@ -1,5 +1,6 @@
 package com.pshs.ams.models.entities;
 
+import com.pshs.ams.models.enums.AttendanceStatus;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
@@ -38,7 +39,8 @@ public class User extends PanacheEntityBase {
 	@Size(max = 48)
 	@ColumnDefault("'GUEST'")
 	@Column(name = "role", length = 48)
-	private String role;
+	@Enumerated(EnumType.STRING)
+	private AttendanceStatus role;
 
 	@ColumnDefault("false")
 	@Column(name = "is_expired")
@@ -64,5 +66,5 @@ public class User extends PanacheEntityBase {
 	private Instant updatedAt;
 
 	@OneToOne(mappedBy = "user")
-	private Teacher teachers;
+	private Teacher teacher;
 }

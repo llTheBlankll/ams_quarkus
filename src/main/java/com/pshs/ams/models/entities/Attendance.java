@@ -1,5 +1,6 @@
 package com.pshs.ams.models.entities;
 
+import com.pshs.ams.models.enums.AttendanceStatus;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -26,7 +27,8 @@ public class Attendance extends PanacheEntityBase {
 	@NotNull
 	@ColumnDefault("'ABSENT'")
 	@Column(name = "status", nullable = false, length = Integer.MAX_VALUE)
-	private String status;
+	@Enumerated(EnumType.STRING)
+	private AttendanceStatus status;
 
 	@ColumnDefault("CURRENT_DATE")
 	@Column(name = "date")
