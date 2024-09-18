@@ -17,7 +17,7 @@ import java.io.Serializable;
 @AllArgsConstructor
 @NoArgsConstructor
 @Accessors(chain = true)
-public class RfidCredentialDTO implements Serializable {
+public class RFIDCredentialDTO implements Serializable {
 	private Integer id;
 	@NotNull
 	private StudentDTO student;

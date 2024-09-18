@@ -34,9 +34,9 @@ public class StudentController {
 	/**
 	 * Retrieves a list of all students with optional pagination and sorting.
 	 *
-	 * @param sortRequest  an object containing sorting parameters (sortBy, sortDirection)
-	 * @param pageRequest  an object containing pagination parameters (page, size)
-	 * @return          a list of StudentDTO objects
+	 * @param sortRequest an object containing sorting parameters (sortBy, sortDirection)
+	 * @param pageRequest an object containing pagination parameters (page, size)
+	 * @return a list of StudentDTO objects
 	 */
 	@GET
 	@Path("/all")
@@ -58,6 +58,4 @@ public class StudentController {
 			Page.of(pageRequest.page, pageRequest.size)
 		).stream().map(student -> this.modelMapper.map(student, StudentDTO.class)).toList();
 	}
-
-
 }
