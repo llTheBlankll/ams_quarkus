@@ -2,7 +2,7 @@ package com.pshs.ams.services.impl;
 
 import com.pshs.ams.models.entities.Student;
 import com.pshs.ams.models.enums.CodeStatus;
-import com.pshs.ams.services.StudentService;
+import com.pshs.ams.services.interfaces.StudentService;
 import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;

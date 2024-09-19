@@ -1,34 +1,220 @@
 package com.pshs.ams.services.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.pshs.ams.models.dto.attendance.AttendanceDTO;
 import com.pshs.ams.models.dto.custom.DateRange;
 import com.pshs.ams.models.dto.custom.LineChartDTO;
-import com.pshs.ams.models.entities.Attendance;
-import com.pshs.ams.models.entities.Classroom;
-import com.pshs.ams.models.entities.Student;
-import com.pshs.ams.models.enums.AttendanceStatus;
-import com.pshs.ams.models.enums.Sex;
-import com.pshs.ams.models.enums.TimeStack;
+import com.pshs.ams.models.dto.custom.MessageDTO;
+import com.pshs.ams.models.dto.custom.RFIDCardDTO;
+import com.pshs.ams.models.entities.*;
+import com.pshs.ams.models.enums.*;
 import com.pshs.ams.models.interfaces.AttendanceForeignEntity;
-import com.pshs.ams.services.AttendanceService;
+import com.pshs.ams.services.RealTimeAttendanceService;
+import com.pshs.ams.services.interfaces.AttendanceService;
 import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import org.jboss.logging.Logger;
+import org.modelmapper.ModelMapper;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.temporal.IsoFields;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @ApplicationScoped
 public class AttendanceServiceImpl implements AttendanceService {
 
 	@Inject
 	Logger logger;
+
+	@Inject
+	RealTimeAttendanceService realTimeAttendanceService;
+
+	private final ObjectMapper objectMapper = new ObjectMapper();
+	private final ModelMapper modelMapper = new ModelMapper();
+
+	public AttendanceServiceImpl() {
+		objectMapper.registerModule(new JavaTimeModule());
+	}
+
+	/**
+	 * @param attendance
+	 * @return
+	 */
+	@Override
+	public CodeStatus createAttendance(Attendance attendance) {
+		if (attendance == null) {
+			logger.debug("Attendance is null");
+			return CodeStatus.NULL;
+		}
+
+		// Check if the student has the same attendance for today correlated to the date and status
+		boolean exists = Attendance.count("student = ?1 and date = ?2 and status = ?3", attendance.getStudent(), attendance.getDate(), attendance.getStatus()) > 0;
+		if (exists) {
+			logger.debug("Student already has attendance for today correlated to the date and status");
+			return CodeStatus.EXISTS;
+		}
+
+		attendance.persist();
+		return CodeStatus.OK;
+	}
+
+	/**
+	 * @param rfidCardDTO
+	 * @return
+	 */
+	@Override
+	@Transactional
+	public MessageDTO fromWebSocket(RFIDCardDTO rfidCardDTO) throws JsonProcessingException {
+		if (rfidCardDTO == null || rfidCardDTO.getHashedLrn() == null || rfidCardDTO.getMode() == null) {
+			logger.debug("RFID Card DTO is null");
+			return new MessageDTO(
+				"RFID Card DTO is null",
+				CodeStatus.NULL
+			);
+		}
+
+		Optional<RfidCredential> rfidCredential = RfidCredential.find("hashedLrn = ?1", rfidCardDTO.getHashedLrn()).firstResultOptional();
+		if (rfidCredential.isEmpty()) {
+			logger.debug("RFID Card not found: " + rfidCardDTO.getHashedLrn());
+			return new MessageDTO(
+				"RFID Card not found",
+				CodeStatus.NOT_FOUND
+			);
+		}
+
+		LocalDate now = LocalDate.now();
+		Attendance attendance = new Attendance();
+		attendance.setStudent(rfidCredential.get().getStudent());
+		attendance.setDate(LocalDate.now());
+		Optional<Attendance> latestAttendanceOptional = Attendance.find("date = ?1 AND student.id = ?2", now, rfidCredential.get().getStudent().getId()).firstResultOptional();
+
+		// * Now, what we have to do is to calculate the timeIn, timeOut, and status
+		switch (rfidCardDTO.getMode()) {
+			case IN -> {
+				// Check if the student has the same attendance for today correlated to the date and status
+				if (latestAttendanceOptional.isPresent()) {
+					logger.debug("Student already has attendance for today correlated to the date and status");
+					return new MessageDTO(
+						"Already Checked In",
+						CodeStatus.EXISTS
+					);
+				}
+
+				// Create attendance
+				logger.debug("Creating attendance for student: " + rfidCredential.get().getStudent());
+				attendance.setTimeIn(LocalTime.now());
+				attendance.setStatus(getAttendanceStatus(rfidCardDTO.getMode(), rfidCredential.get().getStudent()));
+				attendance.persist();
+				realTimeAttendanceService.broadcastMessage(objectMapper.writeValueAsString(
+					modelMapper.map(attendance, AttendanceDTO.class)
+				));
+				return new MessageDTO(
+					"Status: " + attendance.getStatus(),
+					CodeStatus.OK
+				);
+			}
+
+			case OUT -> {
+				// Get the latest attendance
+				if (latestAttendanceOptional.isEmpty()) {
+					logger.debug("No attendance found for today");
+					return new MessageDTO(
+						"Not Checked In",
+						CodeStatus.NOT_FOUND
+					);
+				}
+
+				// Get Attendance
+				Attendance latestAttendance = latestAttendanceOptional.get();
+				if (latestAttendance.getTimeOut() != null) {
+					logger.debug("Student already has attendance for today correlated to the date and status");
+					return new MessageDTO(
+						"Already Checked Out",
+						CodeStatus.EXISTS
+					);
+				}
+
+				// Update attendance
+				logger.debug("Updating attendance for student: " + rfidCredential.get().getStudent());
+				latestAttendance.setTimeOut(LocalTime.now());
+				latestAttendance.persist();
+				realTimeAttendanceService.broadcastMessage(objectMapper.writeValueAsString(
+					modelMapper.map(latestAttendance, AttendanceDTO.class)
+				));
+				return new MessageDTO(
+					"Status: " + latestAttendance.getStatus(),
+					CodeStatus.OK
+				);
+			}
+
+			case EXCUSED -> {
+				if (latestAttendanceOptional.isEmpty()) {
+					logger.debug("No attendance found, when excusing student, consult to the administrator or teachers.");
+					return new MessageDTO(
+						"Consult admin/teachers",
+						CodeStatus.OK
+					);
+				}
+				// Update attendance
+				logger.debug("Updating attendance for student: " + rfidCredential.get().getStudent());
+				Attendance latestAttendance = latestAttendanceOptional.get();
+				if (latestAttendance.getStatus() == AttendanceStatus.EXCUSED) {
+					logger.debug("Student already has excused attendance for today correlated to the date and status");
+					return new MessageDTO(
+						"Already Excused",
+						CodeStatus.EXISTS
+					);
+				}
+
+				latestAttendance.setNotes("This student was scanned as excused.");
+				latestAttendance.setStatus(getAttendanceStatus(rfidCardDTO.getMode(), rfidCredential.get().getStudent()));
+				latestAttendance.setTimeOut(LocalTime.now());
+				latestAttendance.persist();
+
+				realTimeAttendanceService.broadcastMessage(
+					objectMapper.writeValueAsString(
+						modelMapper.map(latestAttendance, AttendanceDTO.class)
+					)
+				);
+				return new MessageDTO(
+					"Status: EXCUSED",
+					CodeStatus.OK
+				);
+			}
+
+			default -> {
+				throw new Error("Invalid attendance mode: " + rfidCardDTO.getMode());
+			}
+		}
+	}
+
+	private AttendanceStatus getAttendanceStatus(AttendanceMode mode, Student student) {
+		StudentSchedule studentSchedule = student.getStudentSchedule();
+		LocalTime now = LocalTime.now();
+		switch (mode) {
+			case IN -> {
+				if (now.isBefore(studentSchedule.getLateTime())) {
+					return AttendanceStatus.ON_TIME;
+				} else {
+					return AttendanceStatus.LATE;
+				}
+			}
+
+			case EXCUSED -> {
+				return AttendanceStatus.EXCUSED;
+			}
+
+			default -> {
+				throw new Error("Invalid attendance mode: " + mode);
+			}
+		}
+	}
 
 	/**
 	 * Count total attendance of each status
@@ -78,9 +264,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 	 */
 	@Override
 	public List<Attendance> getAllAttendanceByStatusAndDateRange(List<AttendanceStatus> attendanceStatus, DateRange dateRange, Page page, Sort sort) {
-		return Attendance.find("status IN ?1 BETWEEN ?2 AND ?3", sort, attendanceStatus, dateRange.getStartDate(), dateRange.getEndDate())
-			.page(page)
-			.list();
+		return Attendance.find("status IN ?1 BETWEEN ?2 AND ?3", sort, attendanceStatus, dateRange.getStartDate(), dateRange.getEndDate()).page(page).list();
 	}
 
 	/**

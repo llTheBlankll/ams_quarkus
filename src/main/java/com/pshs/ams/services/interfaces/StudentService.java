@@ -1,4 +1,4 @@
-package com.pshs.ams.services;
+package com.pshs.ams.services.interfaces;
 
 import com.pshs.ams.models.entities.Student;
 import com.pshs.ams.models.enums.CodeStatus;

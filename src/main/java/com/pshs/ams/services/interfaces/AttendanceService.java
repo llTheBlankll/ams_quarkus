@@ -1,10 +1,14 @@
-package com.pshs.ams.services;
+package com.pshs.ams.services.interfaces;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.pshs.ams.models.dto.attendance.AttendanceDTO;
 import com.pshs.ams.models.dto.custom.DateRange;
 import com.pshs.ams.models.dto.custom.LineChartDTO;
+import com.pshs.ams.models.dto.custom.MessageDTO;
+import com.pshs.ams.models.dto.custom.RFIDCardDTO;
 import com.pshs.ams.models.entities.Attendance;
 import com.pshs.ams.models.enums.AttendanceStatus;
+import com.pshs.ams.models.enums.CodeStatus;
 import com.pshs.ams.models.enums.Sex;
 import com.pshs.ams.models.enums.TimeStack;
 import com.pshs.ams.models.interfaces.AttendanceForeignEntity;
@@ -14,6 +18,10 @@ import io.quarkus.panache.common.Sort;
 import java.util.List;
 
 public interface AttendanceService {
+
+	CodeStatus createAttendance(Attendance student);
+
+	MessageDTO fromWebSocket(RFIDCardDTO rfidCardDTO) throws JsonProcessingException;
 
 	/**
 	 * Count total attendance of each status
