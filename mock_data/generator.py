@@ -1,7 +1,10 @@
 import random
+import hashlib
+
 from entities.classroom import Classroom
 from entities.grade_level import GradeLevel
 from entities.guardian import Guardian
+from entities.rfid_credential import RFIDCredential
 from entities.strand import Strand
 from faker import Faker
 from bcrypt import hashpw, gensalt
@@ -188,6 +191,9 @@ def generate():
                 student_statement += ";"
                 print(student_statement[-1])
         file.write(student_statement)
+
+    with open("mocks/rfid_credential.sql", "a") as file:
+        rfid_credential_statement
 
 
 if __name__ == '__main__':
