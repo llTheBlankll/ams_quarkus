@@ -1,10 +1,12 @@
 package com.pshs.ams.services;
 
 import com.pshs.ams.models.entities.Student;
+import com.pshs.ams.models.enums.CodeStatus;
 import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface StudentService {
 
@@ -17,36 +19,34 @@ public interface StudentService {
 	 */
 	List<Student> getAllStudents(Sort sort, Page page);
 
+	/**
+	 * Creates a new student.
+	 *
+	 * @param student the Student to create
+	 * @return the created Student
+	 */
+	CodeStatus createStudent(Student student);
 
 	/**
-	 * Retrieves a list of all classes with optional sorting and pagination.
+	 * Deletes the student with the given id.
 	 *
-	 * @param sort a sorting object containing sorting parameters (sortBy, sortDirection)
-	 * @param page a pagination object containing pagination parameters (page, size)
-	 * @return a list of Classroom objects
+	 * @param id the id of the student to delete
+	 * @return the status of the delete operation
 	 */
-	List<Student> getAllClasses(Sort sort, Page page);
+	CodeStatus deleteStudent(Long id);
 
 	/**
-	 * Creates a new class.
+	 * Retrieves the total number of students.
 	 *
-	 * @param student a Student object
-	 * @return the created Student object
+	 * @return the total number of students
 	 */
-	Student createClass(Student student);
+	long getTotalStudents();
 
 	/**
-	 * Deletes the class with the given id.
+	 * Retrieves the student with the given id.
 	 *
-	 * @param id the id of the class to delete
+	 * @param id the id of the student to retrieve
+	 * @return the retrieved Student
 	 */
-	void deleteClass(Long id);
-
-	/**
-	 * Retrieves the class with the given id.
-	 *
-	 * @param id the id of the class to retrieve
-	 * @return the retrieved Classroom object
-	 */
-	Student getClassroom(Long id);
+	Optional<Student> getStudent(Long id);
 }

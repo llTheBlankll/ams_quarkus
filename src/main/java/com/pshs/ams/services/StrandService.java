@@ -7,14 +7,15 @@ import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface StrandService {
 
 	List<Strand> getAllStrand(Sort sort, Page page);
 
-	Strand createStrand(Strand strand);
+	CodeStatus createStrand(Strand strand);
 
-	Strand getStrand(Long id);
+	Optional<Strand> getStrand(Long id);
 
 	CodeStatus deleteStrand(Long id);
 

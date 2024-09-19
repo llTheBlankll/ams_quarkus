@@ -6,6 +6,7 @@ import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface TeacherService {
 
@@ -24,7 +25,7 @@ public interface TeacherService {
 	 * @param id the id of the {@link Teacher} to retrieve
 	 * @return the retrieved {@link Teacher} object
 	 */
-	Teacher getTeacher(Long id);
+	Optional<Teacher> getTeacher(Long id);
 
 	/**
 	 * Creates a new {@link Teacher}.
