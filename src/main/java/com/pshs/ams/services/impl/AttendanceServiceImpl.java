@@ -162,12 +162,16 @@ public class AttendanceServiceImpl implements AttendanceService {
 	 */
 	@Override
 	public long countAttendances(DateRange dateRange, List<AttendanceStatus> statuses, AttendanceForeignEntity foreignEntity, List<Sex> sexes) {
+		logger.debug("Count total attendance: " + dateRange);
 		if (isStudentInstance(foreignEntity)) {
+			logger.debug("Student: " + foreignEntity);
 			return Attendance.count("status IN ?1 BETWEEN ?2 AND ?3 AND student.id = ?4", statuses, dateRange.getStartDate(), dateRange.getEndDate(), ((Student) foreignEntity).getId());
 		} else if (isClassroomInstance(foreignEntity)) {
+			logger.debug("Classroom: " + foreignEntity);
 			return Attendance.count("status IN ?1 BETWEEN ?2 AND ?3 AND classroom.id = ?4", statuses, dateRange.getStartDate(), dateRange.getEndDate(), ((Classroom) foreignEntity).getId());
 		}
 
+		logger.debug("All: " + dateRange);
 		return Attendance.count("status IN ?1 BETWEEN ?2 AND ?3", statuses, dateRange.getStartDate(), dateRange.getEndDate());
 	}
 
@@ -181,6 +185,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 	 */
 	@Override
 	public long countAttendances(DateRange dateRange, List<AttendanceStatus> statuses, List<Sex> sexes) {
+		logger.debug("Count total attendance: " + dateRange);
 		return Attendance.count("status IN ?1 BETWEEN ?2 AND ?3", statuses, dateRange.getStartDate(), dateRange.getEndDate());
 	}
 
@@ -192,6 +197,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 	 */
 	@Override
 	public long countAttendancesInClass(Long classroomId) {
+		logger.debug("Count total attendance in class: " + classroomId);
 		return Attendance.count("classroom.id = ?1", classroomId);
 	}
 
@@ -204,6 +210,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 	 */
 	@Override
 	public List<Attendance> getAllStudentAttendance(Long studentId, Page page) {
+		logger.debug("Get all student attendance: " + studentId);
 		return Attendance.find("student.id", studentId).page(page).list();
 	}
 
@@ -215,7 +222,8 @@ public class AttendanceServiceImpl implements AttendanceService {
 	 */
 	@Override
 	public long totalStudentAttendance(Long studentId) {
-		return Attendance.count("student.id", studentId);
+		logger.debug("Get total student attendance: " + studentId);
+		return Attendance.count("student.id = ?1", studentId);
 	}
 
 	private boolean isStudentInstance(AttendanceForeignEntity foreignEntity) {

@@ -7,6 +7,7 @@ import com.pshs.ams.services.GuardianService;
 import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.transaction.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -43,6 +44,7 @@ public class GuardianServiceImpl implements GuardianService {
 	 * @return the created {@link Guardian}
 	 */
 	@Override
+	@Transactional
 	public CodeStatus createGuardian(Guardian guardian) {
 		// The id should be null
 		if (guardian.getId() != null) {
@@ -65,6 +67,7 @@ public class GuardianServiceImpl implements GuardianService {
 	 * @return the status of the update operation
 	 */
 	@Override
+	@Transactional
 	public CodeStatus updateGuardian(Guardian guardian) {
 		// The id should not be null
 		if (guardian.getId() == null) {
@@ -76,8 +79,12 @@ public class GuardianServiceImpl implements GuardianService {
 			return CodeStatus.EXISTS;
 		}
 
-		guardian.update();
-		return CodeStatus.OK;
+		if (guardian.isPersistent()) {
+			guardian.persist();
+			return CodeStatus.OK;
+		}
+
+		return CodeStatus.NOT_FOUND;
 	}
 
 	/**
@@ -87,7 +94,14 @@ public class GuardianServiceImpl implements GuardianService {
 	 * @return the status of the delete operation
 	 */
 	@Override
+	@Transactional
 	public CodeStatus deleteGuardian(Integer id) {
-		return null;
+		Optional<Guardian> existingGuardian = Guardian.findByIdOptional(id);
+		if (existingGuardian.isPresent()) {
+			existingGuardian.get().delete();
+			return CodeStatus.OK;
+		}
+
+		return CodeStatus.NOT_FOUND;
 	}
 }

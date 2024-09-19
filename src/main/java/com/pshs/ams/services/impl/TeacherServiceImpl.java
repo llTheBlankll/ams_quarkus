@@ -6,11 +6,19 @@ import com.pshs.ams.services.TeacherService;
 import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+import org.jboss.logging.Logger;
 
 import java.util.List;
+import java.util.Optional;
 
 @ApplicationScoped
 public class TeacherServiceImpl implements TeacherService {
+
+	@Inject
+	Logger logger;
+
 	/**
 	 * Retrieves a list of all {@link Teacher}s sorted and paged according to the given {@link Sort} and {@link Page}.
 	 *
@@ -20,7 +28,7 @@ public class TeacherServiceImpl implements TeacherService {
 	 */
 	@Override
 	public List<Teacher> getAllTeacher(Sort sort, Page page) {
-		return List.of();
+		return Teacher.findAll(sort).page(page).list();
 	}
 
 	/**
@@ -30,8 +38,8 @@ public class TeacherServiceImpl implements TeacherService {
 	 * @return the retrieved {@link Teacher} object
 	 */
 	@Override
-	public Teacher getTeacher(Long id) {
-		return null;
+	public Optional<Teacher> getTeacher(Long id) {
+		return Teacher.findByIdOptional(id);
 	}
 
 	/**
@@ -41,8 +49,22 @@ public class TeacherServiceImpl implements TeacherService {
 	 * @return the status of the creation
 	 */
 	@Override
+	@Transactional
 	public CodeStatus createTeacher(Teacher teacher) {
-		return null;
+		logger.debug("Creating Teacher: " + teacher.getLastName());
+		if (teacher.getId() != null) {
+			logger.debug("Teacher already exists with ID: " + teacher.getId());
+			return CodeStatus.BAD_REQUEST;
+		}
+
+		if (teacher.isPersistent()) {
+			// Already exists
+			logger.debug("Teacher already exists: " + teacher.getLastName());
+			return CodeStatus.EXISTS;
+		}
+
+		teacher.persist();
+		return CodeStatus.OK;
 	}
 
 	/**
@@ -52,8 +74,20 @@ public class TeacherServiceImpl implements TeacherService {
 	 * @return the status of the update operation
 	 */
 	@Override
+	@Transactional
 	public CodeStatus updateTeacher(Teacher teacher) {
-		return null;
+		if (teacher == null) {
+			logger.debug("Teacher is null");
+			return CodeStatus.NULL;
+		}
+
+		if (teacher.isPersistent()) {
+			teacher.persist();
+			return CodeStatus.OK;
+		}
+
+		logger.debug("Teacher not found: " + teacher.getId());
+		return CodeStatus.NOT_FOUND;
 	}
 
 	/**
@@ -63,8 +97,23 @@ public class TeacherServiceImpl implements TeacherService {
 	 * @return the status of the delete operation
 	 */
 	@Override
+	@Transactional
 	public CodeStatus deleteTeacher(Integer id) {
-		return null;
+		if (id <= 0) {
+			logger.debug("Invalid id: " + id);
+			return CodeStatus.BAD_REQUEST;
+		}
+
+		Optional<Teacher> existingTeacher = Teacher.findByIdOptional(id);
+		if (existingTeacher.isPresent()) {
+			logger.debug("Teacher found: " + existingTeacher.get().getLastName());
+			existingTeacher.get().delete();
+			logger.debug("Teacher deleted: " + existingTeacher.get().getLastName());
+			return CodeStatus.OK;
+		}
+
+		logger.debug("Teacher not found: " + id);
+		return CodeStatus.NOT_FOUND;
 	}
 
 	/**
@@ -75,6 +124,10 @@ public class TeacherServiceImpl implements TeacherService {
 	 */
 	@Override
 	public List<Teacher> searchTeacherByName(String name) {
-		return List.of();
+		if (name.isEmpty()) {
+			return List.of();
+		}
+
+		return Teacher.find("name like ?1", "%" + name + "%").list();
 	}
 }
