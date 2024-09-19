@@ -26,7 +26,7 @@ public class User extends PanacheEntityBase {
 	private String username;
 
 	@Size(max = 60)
-	@Column(name = "password", length = 60)
+	@Column(name = "password", length = 60, columnDefinition = "bpchar")
 	private String password;
 
 	@Size(max = 128)

@@ -28,7 +28,7 @@ public class RfidCredential extends PanacheEntityBase {
 
 	@Size(max = 32)
 	@NotNull
-	@Column(name = "hashed_lrn", nullable = false, length = 32)
+	@Column(name = "hashed_lrn", nullable = false, length = 32, columnDefinition = "bpchar")
 	private String hashedLrn;
 
 	@Size(max = 16)

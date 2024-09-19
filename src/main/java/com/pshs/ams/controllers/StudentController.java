@@ -3,7 +3,7 @@ package com.pshs.ams.controllers;
 import com.pshs.ams.models.dto.custom.PageRequest;
 import com.pshs.ams.models.dto.custom.SortRequest;
 import com.pshs.ams.models.dto.student.StudentDTO;
-import com.pshs.ams.services.StudentService;
+import com.pshs.ams.services.interfaces.StudentService;
 import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
