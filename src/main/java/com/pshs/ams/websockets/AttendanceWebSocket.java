@@ -66,7 +66,6 @@ public class AttendanceWebSocket {
 				logger.debug("Hashed Lrn is null");
 			} else {
 				// Run from the blocking thread using vertx executeBlocking
-				Vertx vertx = Vertx.vertx();
 				Uni.createFrom().item(Unchecked.supplier(() -> {
 						try {
 							return this.attendanceService.fromWebSocket(rfidCard);
