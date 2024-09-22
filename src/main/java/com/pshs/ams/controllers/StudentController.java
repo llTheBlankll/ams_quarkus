@@ -1,16 +1,18 @@
 package com.pshs.ams.controllers;
 
+import com.pshs.ams.models.dto.custom.MessageDTO;
 import com.pshs.ams.models.dto.custom.PageRequest;
 import com.pshs.ams.models.dto.custom.SortRequest;
 import com.pshs.ams.models.dto.student.StudentDTO;
+import com.pshs.ams.models.entities.Student;
+import com.pshs.ams.models.enums.CodeStatus;
 import com.pshs.ams.services.interfaces.StudentService;
 import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.BeanParam;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -21,6 +23,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.modelmapper.ModelMapper;
 
 import java.util.List;
+import java.util.Optional;
 
 @Path("/api/v1/student")
 @ApplicationScoped
@@ -57,5 +60,93 @@ public class StudentController {
 			Sort.by(sortRequest.sortBy, sortRequest.sortDirection),
 			Page.of(pageRequest.page, pageRequest.size)
 		).stream().map(student -> this.modelMapper.map(student, StudentDTO.class)).toList();
+	}
+
+	@PUT
+	@Path("/create")
+	public Response createStudent(StudentDTO studentDTO) {
+		if (studentDTO == null) {
+			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO(
+					"Student is not provided",
+					CodeStatus.NULL
+				)
+			).build();
+		}
+
+		Student student = this.modelMapper.map(studentDTO, Student.class);
+		return switch (studentService.createStudent(student)) {
+			case BAD_REQUEST -> Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO(
+					"Invalid student",
+					CodeStatus.BAD_REQUEST
+				)
+			).build();
+			case EXISTS -> Response.ok(new MessageDTO(
+					"Student already exists",
+					CodeStatus.EXISTS
+				)
+			).build();
+			case OK -> Response.status(Response.Status.CREATED).entity(
+				new MessageDTO(
+					"Student created",
+					CodeStatus.OK
+				)
+			).build();
+			default -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new MessageDTO(
+					"Internal server error",
+					CodeStatus.FAILED
+				)
+			).build();
+		};
+	}
+
+	@DELETE
+	@Path("/{id}")
+	public Response deleteStudent(@PathParam("id") Long id) {
+		return switch (studentService.deleteStudent(id)) {
+			case OK -> Response.ok(new MessageDTO(
+					"Student deleted",
+					CodeStatus.OK
+				)
+			).build();
+			case BAD_REQUEST -> Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO(
+					"Invalid id",
+					CodeStatus.BAD_REQUEST
+				)
+			).build();
+			case NOT_FOUND -> Response.status(Response.Status.NOT_FOUND).entity(new MessageDTO(
+					"Student not found",
+					CodeStatus.NOT_FOUND
+				)
+			).build();
+			default -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new MessageDTO(
+					"Internal server error",
+					CodeStatus.FAILED
+				)
+			).build();
+		};
+	}
+
+
+	@GET
+	@Path("/count/all")
+	public Response getTotalCount() {
+		long count = studentService.getTotalStudents();
+		return Response.ok(count).build();
+	}
+
+
+	@GET
+	@Path("/{id}")
+	public Response getStudentById(@PathParam("id") Long id) {
+		Optional<Student> student = studentService.getStudent(id);
+		if (student.isPresent()) {
+			return Response.ok(student.get()).build();
+		} else {
+			return Response.status(Response.Status.NOT_FOUND).entity(new MessageDTO(
+					"Student not found",
+					CodeStatus.NOT_FOUND
+				)
+			).build();
+		}
 	}
 }
