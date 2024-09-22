@@ -1,5 +1,6 @@
 package com.pshs.ams.models.dto.custom;
 
+import jakarta.ws.rs.QueryParam;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,6 +14,9 @@ import java.time.LocalDate;
 @Accessors(chain = true)
 public class DateRange {
 
+	@QueryParam("startDate")
 	private LocalDate startDate;
+
+	@QueryParam("endDate")
 	private LocalDate endDate;
 }
