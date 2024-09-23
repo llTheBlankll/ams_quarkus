@@ -38,7 +38,7 @@ public class TeacherServiceImpl implements TeacherService {
 	 * @return the retrieved {@link Teacher} object
 	 */
 	@Override
-	public Optional<Teacher> getTeacher(Long id) {
+	public Optional<Teacher> getTeacher(Integer id) {
 		return Teacher.findByIdOptional(id);
 	}
 
@@ -116,18 +116,12 @@ public class TeacherServiceImpl implements TeacherService {
 		return CodeStatus.NOT_FOUND;
 	}
 
-	/**
-	 * Retrieves a list of {@link Teacher}s whose name contains the given string.
-	 *
-	 * @param name the string to search for in the teachers' names
-	 * @return a list of {@link Teacher}s whose name contains the given string
-	 */
 	@Override
-	public List<Teacher> searchTeacherByName(String name) {
+	public List<Teacher> searchTeacherByName(String name, Page page, Sort sort) {
 		if (name.isEmpty()) {
 			return List.of();
 		}
 
-		return Teacher.find("name like ?1", "%" + name + "%").list();
+		return Teacher.find("name like ?1", sort, "%" + name + "%").page(page).list();
 	}
 }

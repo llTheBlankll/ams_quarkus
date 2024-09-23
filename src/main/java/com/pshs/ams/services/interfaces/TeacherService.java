@@ -25,7 +25,7 @@ public interface TeacherService {
 	 * @param id the id of the {@link Teacher} to retrieve
 	 * @return the retrieved {@link Teacher} object
 	 */
-	Optional<Teacher> getTeacher(Long id);
+	Optional<Teacher> getTeacher(Integer id);
 
 	/**
 	 * Creates a new {@link Teacher}.
@@ -51,11 +51,5 @@ public interface TeacherService {
 	 */
 	CodeStatus deleteTeacher(Integer id);
 
-	/**
-	 * Retrieves a list of {@link Teacher}s whose name contains the given string.
-	 *
-	 * @param name the string to search for in the teachers' names
-	 * @return a list of {@link Teacher}s whose name contains the given string
-	 */
-	List<Teacher> searchTeacherByName(String name);
+	List<Teacher> searchTeacherByName(String name, Page page, Sort sort);
 }
