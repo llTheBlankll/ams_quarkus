@@ -19,7 +19,7 @@ import java.util.Set;
 @Setter
 @Entity
 @Table(name = "classrooms")
-public class Classroom extends PanacheEntityBase implements AttendanceForeignEntity {
+public class Classroom extends PanacheEntityBase {
 	@Id
 	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "classrooms_id_gen")
 	@SequenceGenerator(name = "classrooms_id_gen", sequenceName = "classrooms_id_seq", allocationSize = 1)

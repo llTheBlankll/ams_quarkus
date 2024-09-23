@@ -16,7 +16,7 @@ import java.time.LocalDate;
 @Getter
 @Entity
 @Table(name = "students")
-public class Student extends PanacheEntityBase implements AttendanceForeignEntity {
+public class Student extends PanacheEntityBase {
 	@Id
 	@Column(name = "id", nullable = false)
 	private Long id;

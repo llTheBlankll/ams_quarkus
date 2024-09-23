@@ -24,7 +24,7 @@ public interface GradeLevelService {
 	 * @param id the id of the grade level to retrieve
 	 * @return the retrieved GradeLevel object
 	 */
-	GradeLevel getGradeLevelById(Integer id);
+	Optional<GradeLevel> getGradeLevelById(Integer id);
 
 	/**
 	 * Creates a new grade level.

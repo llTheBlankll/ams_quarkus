@@ -39,9 +39,9 @@ public class GradeLevelServiceImpl implements GradeLevelService {
 	 * @return the retrieved GradeLevel object
 	 */
 	@Override
-	public GradeLevel getGradeLevelById(Integer id) {
+	public Optional<GradeLevel> getGradeLevelById(Integer id) {
 		logger.debug("Get grade level by id: " + id);
-		return GradeLevel.findById(id);
+		return GradeLevel.findByIdOptional(id);
 	}
 
 	/**
