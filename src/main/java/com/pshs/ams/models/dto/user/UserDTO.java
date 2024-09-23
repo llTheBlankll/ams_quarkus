@@ -1,4 +1,4 @@
-package com.pshs.ams.models.dto.teacher;
+package com.pshs.ams.models.dto.user;
 
 import com.pshs.ams.models.enums.AttendanceStatus;
 import jakarta.validation.constraints.Size;
@@ -17,7 +17,7 @@ import java.time.Instant;
 @AllArgsConstructor
 @NoArgsConstructor
 @Accessors(chain = true)
-public class TeacherUserDTO implements Serializable {
+public class UserDTO implements Serializable {
 	private Integer id;
 	@Size(max = 64)
 	private String username;
@@ -29,4 +29,5 @@ public class TeacherUserDTO implements Serializable {
 	private Boolean isLocked;
 	private Boolean isEnabled;
 	private Instant lastLogin;
+	private UserTeacherDTO teacher;
 }
