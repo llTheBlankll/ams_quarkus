@@ -1,4 +1,6 @@
 package com.pshs.ams.models.interfaces;
 
-public interface AttendanceForeignEntity {
+public enum AttendanceForeignEntity {
+	CLASSROOM,
+	STUDENT
 }

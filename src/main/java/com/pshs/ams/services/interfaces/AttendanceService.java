@@ -32,14 +32,13 @@ public interface AttendanceService {
 	long countTotalByAttendanceByStatus(List<AttendanceStatus> attendanceStatus, DateRange dateRange);
 
 	/**
-	 * Count total attendance of each status with a foreign entity filter
+	 * Count total attendance of each status with a classroom filter
 	 *
 	 * @param attendanceStatus Attendance Status
 	 * @param dateRange        range of dates to filter by
-	 * @param foreignEntity    the foreign entity to filter by
 	 * @return total count of attendance
 	 */
-	long countTotalByAttendanceByStatus(List<AttendanceStatus> attendanceStatus, DateRange dateRange, AttendanceForeignEntity foreignEntity);
+	long countTotalByAttendanceByStatus(List<AttendanceStatus> attendanceStatus, DateRange dateRange, Integer id, AttendanceForeignEntity foreignEntity);
 
 	// Region: Get All Attendance
 
@@ -60,7 +59,7 @@ public interface AttendanceService {
 	 * @param foreignEntity    the foreign entity to filter by
 	 * @return list of {@link AttendanceDTO} objects
 	 */
-	List<Attendance> getAllAttendanceByStatusAndDateRange(List<AttendanceStatus> attendanceStatus, DateRange dateRange, AttendanceForeignEntity foreignEntity, Page page, Sort sort);
+	List<Attendance> getAllAttendanceByStatusAndDateRange(List<AttendanceStatus> attendanceStatus, DateRange dateRange, AttendanceForeignEntity foreignEntity, Integer id, Page page, Sort sort);
 
 	/**
 	 * Get line chart data
@@ -71,7 +70,9 @@ public interface AttendanceService {
 	 * @param stack         the time stack to group by
 	 * @return list of {@link LineChartDTO} objects
 	 */
-	LineChartDTO getLineChart(List<AttendanceStatus> statuses, DateRange dateRange, AttendanceForeignEntity foreignEntity, TimeStack stack);
+	LineChartDTO getLineChart(List<AttendanceStatus> statuses, DateRange dateRange, AttendanceForeignEntity foreignEntity, Integer id, TimeStack stack);
+
+	LineChartDTO getLineChart(List<AttendanceStatus> statuses, DateRange dateRange, TimeStack stack);
 
 
 	/**
@@ -83,7 +84,7 @@ public interface AttendanceService {
 	 * @param sexes         list of {@link Sex} to filter by
 	 * @return total count of attendance
 	 */
-	long countAttendances(DateRange dateRange, List<AttendanceStatus> statuses, AttendanceForeignEntity foreignEntity, List<Sex> sexes);
+	long countAttendances(DateRange dateRange, List<AttendanceStatus> statuses, AttendanceForeignEntity foreignEntity, Integer id, List<Sex> sexes);
 
 	/**
 	 * Count total attendance
