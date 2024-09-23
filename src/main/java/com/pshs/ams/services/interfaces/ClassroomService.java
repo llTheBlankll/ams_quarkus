@@ -8,7 +8,7 @@ import io.quarkus.panache.common.Sort;
 import java.util.List;
 import java.util.Optional;
 
-public interface ClassService {
+public interface ClassroomService {
 
 	/**
 	 * Retrieves a list of all classes with optional sorting and pagination.
@@ -22,17 +22,17 @@ public interface ClassService {
 	/**
 	 * Creates a new class.
 	 *
-	 * @param student a Student object
+	 * @param classroom a Student object
 	 * @return the created Student object
 	 */
-	CodeStatus createClass(Classroom student);
+	CodeStatus createClass(Classroom classroom);
 
 	/**
 	 * Deletes the class with the given id.
 	 *
 	 * @param id the id of the class to delete
 	 */
-	CodeStatus deleteClass(Long id);
+	CodeStatus deleteClassroom(Integer id);
 
 	/**
 	 * Retrieves the class with the given id.
@@ -40,6 +40,6 @@ public interface ClassService {
 	 * @param id the id of the class to retrieve
 	 * @return the retrieved Classroom object
 	 */
-	Optional<Classroom> getClassroom(Long id);
+	Optional<Classroom> getClassroom(Integer id);
 
 }

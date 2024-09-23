@@ -28,79 +28,42 @@ public class GradeLevelController {
 	@GET
 	@Path("/all")
 	public Response getAllGradeLevel(@BeanParam PageRequest pageRequest, @BeanParam SortRequest sortRequest) {
-		return Response.ok(
-			gradeLevelService.getAllGradeLevel(Sort.by(sortRequest.sortBy, sortRequest.sortDirection), Page.of(pageRequest.page, pageRequest.size))
-		).build();
+		return Response.ok(gradeLevelService.getAllGradeLevel(Sort.by(sortRequest.sortBy, sortRequest.sortDirection), Page.of(pageRequest.page, pageRequest.size))).build();
 	}
 
 	@GET
 	@Path("/{id}")
 	public Response getGradeLevelById(@PathParam("id") Integer id) {
 		if (id <= 0) {
-			return Response.status(Response.Status.BAD_REQUEST).entity(
-				new MessageDTO(
-					"Invalid id",
-					CodeStatus.BAD_REQUEST
-				)
-			).build();
+			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO("Invalid id", CodeStatus.BAD_REQUEST)).build();
 		}
 
 		Optional<GradeLevel> gradeLevelOptional = gradeLevelService.getGradeLevelById(id);
 		if (gradeLevelOptional.isEmpty()) {
-			return Response.status(Response.Status.NOT_FOUND).entity(
-				new MessageDTO(
-					"Grade level not found",
-					CodeStatus.NOT_FOUND
-				)
-			).build();
+			return Response.status(Response.Status.NOT_FOUND).entity(new MessageDTO("Grade level not found", CodeStatus.NOT_FOUND)).build();
 		}
 
-		return Response.ok(
-			mapper.map(gradeLevelOptional.get(), GradeLevelDTO.class)
-		).build();
+		return Response.ok(mapper.map(gradeLevelOptional.get(), GradeLevelDTO.class)).build();
 	}
 
 	@PUT
 	@Path("/create")
 	public Response createGradeLevel(GradeLevelDTO gradeLevelDTO) {
 		if (gradeLevelDTO == null) {
-			return Response.status(Response.Status.BAD_REQUEST).entity(
-				new MessageDTO(
-					"Grade Level cannot be null",
-					CodeStatus.BAD_REQUEST
-				)
-			).build();
+			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO("Grade Level cannot be null", CodeStatus.BAD_REQUEST)).build();
 		}
 
 		// Convert DTO to Entity
 		GradeLevel gradeLevel = mapper.map(gradeLevelDTO, GradeLevel.class);
 		CodeStatus status = gradeLevelService.createGradeLevel(gradeLevel);
 		return switch (status) {
-			case BAD_REQUEST -> Response.status(Response.Status.BAD_REQUEST).entity(
-				new MessageDTO(
-					"Grade Level cannot be null",
-					CodeStatus.BAD_REQUEST
-				)
-			).build();
-			case EXISTS -> Response.ok(new MessageDTO(
-					"Grade level already exists",
-					CodeStatus.EXISTS
-				))
-				.build();
-			case OK -> Response.status(Response.Status.CREATED).entity(
-					new MessageDTO(
-						"Grade level created",
-						CodeStatus.OK
-					)
-				)
-				.build();
-			default -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(
-					new MessageDTO(
-						"Internal Server Error",
-						CodeStatus.FAILED
-					)
-				)
-				.build();
+			case BAD_REQUEST ->
+				Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO("Grade Level cannot be null", CodeStatus.BAD_REQUEST)).build();
+			case EXISTS -> Response.ok(new MessageDTO("Grade level already exists", CodeStatus.EXISTS)).build();
+			case OK ->
+				Response.status(Response.Status.CREATED).entity(new MessageDTO("Grade level created", CodeStatus.OK)).build();
+			default ->
+				Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new MessageDTO("Internal Server Error", CodeStatus.FAILED)).build();
 		};
 	}
 
@@ -108,66 +71,39 @@ public class GradeLevelController {
 	@Path("/{id}")
 	public Response deleteGradeLevel(@PathParam("id") Integer id) {
 		if (id <= 0) {
-			return Response.status(Response.Status.BAD_REQUEST).entity(
-				new MessageDTO(
-					"Invalid id",
-					CodeStatus.BAD_REQUEST
-				)
-			).build();
+			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO("Invalid id", CodeStatus.BAD_REQUEST)).build();
 		}
 
 		return switch (gradeLevelService.deleteGradeLevel(id)) {
-			case OK -> Response.ok(new MessageDTO(
-					"Grade level deleted",
-					CodeStatus.OK
-				))
-				.build();
-			case BAD_REQUEST -> Response.status(Response.Status.BAD_REQUEST).entity(
-				new MessageDTO(
-					"Invalid id",
-					CodeStatus.BAD_REQUEST
-				)
-			).build();
-			case NOT_FOUND -> Response.status(Response.Status.NOT_FOUND).entity(
-				new MessageDTO(
-					"Grade level not found",
-					CodeStatus.NOT_FOUND
-				)
-			).build();
-			default -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(
-					new MessageDTO(
-						"Internal Server Error",
-						CodeStatus.FAILED
-					)
-				)
-				.build();
+			case OK -> Response.ok(new MessageDTO("Grade level deleted", CodeStatus.OK)).build();
+			case BAD_REQUEST ->
+				Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO("Invalid id", CodeStatus.BAD_REQUEST)).build();
+			case NOT_FOUND ->
+				Response.status(Response.Status.NOT_FOUND).entity(new MessageDTO("Grade level not found", CodeStatus.NOT_FOUND)).build();
+			default ->
+				Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new MessageDTO("Internal Server Error", CodeStatus.FAILED)).build();
 		};
 	}
 
 	@GET
 	@Path("/name/{name}")
 	public Response getGradeLevelByName(@PathParam("name") String name) {
+		if (name.isEmpty()) {
+			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO("Name cannot be empty", CodeStatus.BAD_REQUEST)).build();
+		}
+
 		Optional<GradeLevel> gradeLevelOptional = gradeLevelService.getGradeLevelByName(name);
 
 		if (gradeLevelOptional.isEmpty()) {
-			return Response.status(Response.Status.NOT_FOUND).entity(
-				new MessageDTO(
-					"Grade level not found",
-					CodeStatus.NOT_FOUND
-				)
-			).build();
+			return Response.status(Response.Status.NOT_FOUND).entity(new MessageDTO("Grade level not found", CodeStatus.NOT_FOUND)).build();
 		}
 
-		return Response.ok(
-			mapper.map(gradeLevelOptional.get(), GradeLevelDTO.class)
-		).build();
+		return Response.ok(mapper.map(gradeLevelOptional.get(), GradeLevelDTO.class)).build();
 	}
 
 	@GET
 	@Path("/search/name/{name}")
 	public Response searchGradeLevelByName(@PathParam("name") String name) {
-		return Response.ok(
-			gradeLevelService.searchGradeLevelByName(name).stream().map(gl -> mapper.map(gl, GradeLevelDTO.class)).toList()
-		).build();
+		return Response.ok(gradeLevelService.searchGradeLevelByName(name).stream().map(gl -> mapper.map(gl, GradeLevelDTO.class)).toList()).build();
 	}
 }

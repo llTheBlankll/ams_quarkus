@@ -2,19 +2,18 @@ package com.pshs.ams.services.impl;
 
 import com.pshs.ams.models.entities.Classroom;
 import com.pshs.ams.models.enums.CodeStatus;
-import com.pshs.ams.services.interfaces.ClassService;
+import com.pshs.ams.services.interfaces.ClassroomService;
 import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import org.jboss.logging.Logger;
-
 import java.util.List;
 import java.util.Optional;
 
 @ApplicationScoped
-public class ClassServiceImpl implements ClassService {
+public class ClassroomServiceImpl implements ClassroomService {
 
 	@Inject
 	Logger logger;
@@ -64,7 +63,7 @@ public class ClassServiceImpl implements ClassService {
 	 */
 	@Override
 	@Transactional
-	public CodeStatus deleteClass(Long id) {
+	public CodeStatus deleteClassroom(Integer id) {
 		logger.debug("Deleting Class: " + id);
 		Optional<Classroom> existingClass = Classroom.findByIdOptional(id);
 		if (existingClass.isPresent()) {
@@ -85,7 +84,7 @@ public class ClassServiceImpl implements ClassService {
 	 * @return the retrieved Classroom object
 	 */
 	@Override
-	public Optional<Classroom> getClassroom(Long id) {
+	public Optional<Classroom> getClassroom(Integer id) {
 		logger.debug("Get Class: " + id);
 		return Classroom.findByIdOptional(id);
 	}
