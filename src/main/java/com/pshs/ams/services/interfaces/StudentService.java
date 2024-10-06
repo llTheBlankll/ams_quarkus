@@ -43,6 +43,14 @@ public interface StudentService {
 	long getTotalStudents();
 
 	/**
+	 * Retrieves the total number of students in the given classroom.
+	 *
+	 * @param classroomId the id of the classroom
+	 * @return the total number of students in the given classroom
+	 */
+	long getTotalStudents(Long classroomId);
+
+	/**
 	 * Retrieves the student with the given id.
 	 *
 	 * @param id the id of the student to retrieve

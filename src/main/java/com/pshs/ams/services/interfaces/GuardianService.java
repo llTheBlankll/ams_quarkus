@@ -42,7 +42,7 @@ public interface GuardianService {
 	 * @param guardian the {@link Guardian} entity to update
 	 * @return the status of the update operation
 	 */
-	CodeStatus updateGuardian(Guardian guardian);
+	CodeStatus updateGuardian(Guardian guardian, Integer id);
 
 	/**
 	 * Deletes the {@link Guardian} with the given {@code id}.

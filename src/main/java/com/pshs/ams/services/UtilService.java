@@ -8,9 +8,17 @@ import java.util.stream.Collectors;
 
 public class UtilService {
 
-	public static List<AttendanceStatus> statusStringToList(String attendanceList) throws Exception {
-		return Arrays.stream(attendanceList.split(","))
-			.map(AttendanceStatus::valueOf)
-			.collect(Collectors.toList());
+	public static List<AttendanceStatus> statusStringToList(String attendanceList) {
+		try {
+			if (!attendanceList.contains(",")) {
+				return List.of(AttendanceStatus.valueOf(attendanceList));
+			}
+
+			return Arrays.stream(attendanceList.split(","))
+				.map(AttendanceStatus::valueOf)
+				.collect(Collectors.toList());
+		} catch (Exception e) {
+			return null;
+		}
 	}
 }

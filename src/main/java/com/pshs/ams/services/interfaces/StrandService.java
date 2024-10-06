@@ -11,13 +11,26 @@ import java.util.Optional;
 
 public interface StrandService {
 
+	/**
+	 * Retrieves a list of Strand entities based on the specified sort and page configurations.
+	 *
+	 * @param sort the sort configuration for the list
+	 * @param page the page configuration for the list
+	 * @return a list of Strand entities
+	 */
 	List<Strand> getAllStrand(Sort sort, Page page);
 
+	/**
+	 * Creates a new Strand entity in the system.
+	 *
+	 * @param strand the Strand entity to be created
+	 * @return the status of the creation operation
+	 */
 	CodeStatus createStrand(Strand strand);
 
-	Optional<Strand> getStrand(Long id);
+	Optional<Strand> getStrand(Integer id);
 
-	CodeStatus deleteStrand(Long id);
+	CodeStatus deleteStrand(Integer id);
 
-	CodeStatus updateStrand(Strand strand);
+	CodeStatus updateStrand(Strand strand, Integer id);
 }

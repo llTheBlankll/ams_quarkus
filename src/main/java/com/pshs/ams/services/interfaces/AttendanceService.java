@@ -2,6 +2,7 @@ package com.pshs.ams.services.interfaces;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.pshs.ams.models.dto.attendance.AttendanceDTO;
+import com.pshs.ams.models.dto.attendance.ClassroomDemographicsAttendanceDTO;
 import com.pshs.ams.models.dto.custom.DateRange;
 import com.pshs.ams.models.dto.custom.LineChartDTO;
 import com.pshs.ams.models.dto.custom.MessageDTO;
@@ -38,7 +39,7 @@ public interface AttendanceService {
 	 * @param dateRange        range of dates to filter by
 	 * @return total count of attendance
 	 */
-	long countTotalByAttendanceByStatus(List<AttendanceStatus> attendanceStatus, DateRange dateRange, Integer id, AttendanceForeignEntity foreignEntity);
+	long countTotalByAttendanceByStatus(List<AttendanceStatus> attendanceStatus, DateRange dateRange, Long id, AttendanceForeignEntity foreignEntity);
 
 	// Region: Get All Attendance
 
@@ -70,10 +71,27 @@ public interface AttendanceService {
 	 * @param stack         the time stack to group by
 	 * @return list of {@link LineChartDTO} objects
 	 */
-	LineChartDTO getLineChart(List<AttendanceStatus> statuses, DateRange dateRange, AttendanceForeignEntity foreignEntity, Integer id, TimeStack stack);
+	LineChartDTO getLineChart(List<AttendanceStatus> statuses, DateRange dateRange, AttendanceForeignEntity foreignEntity, Long id, TimeStack stack);
 
+	/**
+	 * Get line chart data
+	 *
+	 * @param statuses  list of {@link AttendanceStatus} to filter by
+	 * @param dateRange range of dates to filter by
+	 * @param stack     the time stack to group by
+	 * @return list of {@link LineChartDTO} objects
+	 */
 	LineChartDTO getLineChart(List<AttendanceStatus> statuses, DateRange dateRange, TimeStack stack);
 
+	/**
+	 * Get classroom demographics chart
+	 *
+	 * @param statuses  list of {@link AttendanceStatus} to filter by
+	 * @param dateRange range of dates to filter by
+	 * @param id        classroom id
+	 * @return list of {@link ClassroomDemographicsAttendanceDTO} objects
+	 */
+	ClassroomDemographicsAttendanceDTO getClassroomDemographicsChart(List<AttendanceStatus> statuses, DateRange dateRange, Long id);
 
 	/**
 	 * Count total attendance

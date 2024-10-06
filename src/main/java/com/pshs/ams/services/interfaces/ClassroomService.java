@@ -40,6 +40,7 @@ public interface ClassroomService {
 	 * @param id the id of the class to retrieve
 	 * @return the retrieved Classroom object
 	 */
-	Optional<Classroom> getClassroom(Integer id);
+	Optional<Classroom> getClassroom(Long id);
 
+	List<Classroom> searchClassroomByName(String name, Page page, Sort sort);
 }
