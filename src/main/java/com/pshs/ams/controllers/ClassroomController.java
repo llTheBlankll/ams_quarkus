@@ -2,6 +2,9 @@ package com.pshs.ams.controllers;
 
 import com.pshs.ams.models.dto.classroom.ClassroomDTO;
 import com.pshs.ams.models.dto.custom.MessageDTO;
+import com.pshs.ams.models.dto.custom.PageRequest;
+import com.pshs.ams.models.dto.custom.SortRequest;
+import com.pshs.ams.models.dto.student.StudentClassroomDTO;
 import com.pshs.ams.models.entities.Classroom;
 import com.pshs.ams.models.enums.CodeStatus;
 import com.pshs.ams.services.interfaces.ClassroomService;
@@ -26,9 +29,12 @@ public class ClassroomController {
 
 	@GET
 	@Path("/all")
-	public Response getAllClassrooms(Page page, Sort sort) {
+	public Response getAllClassrooms(@BeanParam SortRequest sort, @BeanParam PageRequest page) {
 		return Response.ok(
-			classroomService.getAllClasses(sort, page)
+			classroomService.getAllClasses(
+				Sort.by(sort.sortBy, sort.sortDirection),
+				Page.of(page.page, page.size)
+			).stream().map(classroom -> mapper.map(classroom, ClassroomDTO.class)).toList()
 		).build();
 	}
 
@@ -110,10 +116,27 @@ public class ClassroomController {
 		};
 	}
 
+	@GET
+	@Path("/search/name/{name}")
+	public Response searchClassroomByName(@PathParam("name") String name, @BeanParam PageRequest pageRequest, @BeanParam SortRequest sortRequest) {
+		if (name.isEmpty()) {
+			return Response.status(Response.Status.BAD_REQUEST).entity(
+				new MessageDTO(
+					"Name cannot be empty",
+					CodeStatus.BAD_REQUEST
+				)
+			).build();
+		}
+
+		return Response.ok(
+			classroomService.searchClassroomByName(name, Page.of(pageRequest.page, pageRequest.size), Sort.by(sortRequest.sortBy, sortRequest.sortDirection))
+				.stream().map(cls -> mapper.map(cls, ClassroomDTO.class)).toList()
+		).build();
+	}
 
 	@GET
 	@Path("/{id}")
-	public Response getClassroom(@PathParam("id") Integer id) {
+	public Response getClassroom(@PathParam("id") Long id) {
 		if (id <= 0) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(
 				new MessageDTO(

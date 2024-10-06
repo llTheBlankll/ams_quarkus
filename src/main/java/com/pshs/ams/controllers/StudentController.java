@@ -25,7 +25,7 @@ import org.modelmapper.ModelMapper;
 import java.util.List;
 import java.util.Optional;
 
-@Path("/api/v1/student")
+@Path("/api/v1/students")
 @ApplicationScoped
 @Tag(name = "Student API")
 public class StudentController {
@@ -128,9 +128,16 @@ public class StudentController {
 
 
 	@GET
-	@Path("/count/all")
+	@Path("/count")
 	public Response getTotalCount() {
 		long count = studentService.getTotalStudents();
+		return Response.ok(count).build();
+	}
+
+	@GET
+	@Path("/count/classroom/{id}")
+	public Response getStudentTotalCountInClassroom(@PathParam("id") Long id) {
+		long count = studentService.getTotalStudents(id);
 		return Response.ok(count).build();
 	}
 

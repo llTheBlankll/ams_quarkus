@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Optional;
 
 @ApplicationScoped
-@Path("/api/v1/teacherss")
+@Path("/api/v1/teachers")
 public class TeacherController {
 
 	@Inject
@@ -82,7 +82,7 @@ public class TeacherController {
 	}
 
 	@GET
-	@Path("/name/{name}")
+	@Path("/search/name/{name}")
 	public Response getTeacherByName(@PathParam("name") String name, @BeanParam PageRequest pageRequest, @BeanParam SortRequest sortRequest) {
 		if (name.isEmpty()) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO("Name cannot be empty", CodeStatus.BAD_REQUEST)).build();
