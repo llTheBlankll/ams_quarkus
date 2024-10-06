@@ -68,7 +68,7 @@ public class StrandServiceImpl implements StrandService {
 	 * @return the Strand entity if found, null otherwise
 	 */
 	@Override
-	public Optional<Strand> getStrand(Long id) {
+	public Optional<Strand> getStrand(Integer id) {
 		return Strand.findByIdOptional(id);
 	}
 
@@ -80,7 +80,7 @@ public class StrandServiceImpl implements StrandService {
 	 */
 	@Override
 	@Transactional
-	public CodeStatus deleteStrand(Long id) {
+	public CodeStatus deleteStrand(Integer id) {
 		if (id <= 0) {
 			logger.debug("Invalid Strand id: " + id);
 			return CodeStatus.BAD_REQUEST;
@@ -105,24 +105,20 @@ public class StrandServiceImpl implements StrandService {
 	 */
 	@Override
 	@Transactional
-	public CodeStatus updateStrand(Strand strand) {
-		if (strand == null) {
+	public CodeStatus updateStrand(Strand strand, Integer id) {
+		if (strand == null || id <= 0) {
 			logger.debug("Strand is null");
 			return CodeStatus.NULL;
 		}
 
-		if (strand.getId() == null) {
-			logger.debug("Strand id is null");
-			return CodeStatus.BAD_REQUEST;
-		}
-
-		Optional<Strand> existingStrand = Strand.findByIdOptional(strand.getId());
+		Optional<Strand> existingStrand = Strand.findByIdOptional(id);
 		if (existingStrand.isEmpty()) {
 			logger.debug("Strand with id " + strand.getId() + " not found");
 			return CodeStatus.NOT_FOUND;
 		}
 
 		logger.debug("Update Strand: " + strand);
+		strand.setId(id);
 		strand.persist();
 		return CodeStatus.OK;
 	}

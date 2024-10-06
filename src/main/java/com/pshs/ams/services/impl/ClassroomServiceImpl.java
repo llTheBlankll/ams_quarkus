@@ -9,6 +9,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import org.jboss.logging.Logger;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -84,8 +85,20 @@ public class ClassroomServiceImpl implements ClassroomService {
 	 * @return the retrieved Classroom object
 	 */
 	@Override
-	public Optional<Classroom> getClassroom(Integer id) {
+	public Optional<Classroom> getClassroom(Long id) {
 		logger.debug("Get Class: " + id);
 		return Classroom.findByIdOptional(id);
+	}
+
+	/**
+	 * @param name
+	 * @param page
+	 * @param sort
+	 * @return
+	 */
+	@Override
+	public List<Classroom> searchClassroomByName(String name, Page page, Sort sort) {
+		logger.debug("Search Class: " + name);
+		return Classroom.find("classroomName LIKE ?1", sort, "%" + name + "%").page(page).list();
 	}
 }

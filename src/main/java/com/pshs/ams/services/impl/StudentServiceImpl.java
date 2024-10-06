@@ -1,7 +1,9 @@
 package com.pshs.ams.services.impl;
 
+import com.pshs.ams.models.entities.Classroom;
 import com.pshs.ams.models.entities.Student;
 import com.pshs.ams.models.enums.CodeStatus;
+import com.pshs.ams.services.interfaces.ClassroomService;
 import com.pshs.ams.services.interfaces.StudentService;
 import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
@@ -17,6 +19,9 @@ public class StudentServiceImpl implements StudentService {
 
 	@Inject
 	Logger logger;
+
+	@Inject
+	ClassroomService classroomService;
 
 	/**
 	 * Retrieves a list of all students with optional sorting and pagination.
@@ -90,6 +95,31 @@ public class StudentServiceImpl implements StudentService {
 	}
 
 	/**
+	 * Retrieves the total number of students in the given classroom.
+	 *
+	 * @param classroomId the id of the classroom
+	 * @return the total number of students in the given classroom
+	 */
+	@Override
+	public long getTotalStudents(Long classroomId) {
+		// Check if exists
+		if (classroomId <= 0) {
+			logger.debug("Invalid classroom id: " + classroomId);
+			return 0;
+		}
+
+		// Check if the classroom exists
+		Optional<Classroom> classroom = classroomService.getClassroom(classroomId);
+		if (classroom.isEmpty()) {
+			logger.debug("Classroom not found: " + classroomId);
+			return 0;
+		}
+
+		// Check if exists
+		return classroom.get().getStudents().size();
+	}
+
+	/**
 	 * Retrieves the student with the given id.
 	 *
 	 * @param id the id of the student to retrieve
@@ -102,6 +132,7 @@ public class StudentServiceImpl implements StudentService {
 			return Optional.empty();
 		}
 
+		// Return the student
 		return Student.findByIdOptional(id);
 	}
 }

@@ -1,6 +1,5 @@
 package com.pshs.ams.services.impl;
 
-import com.pshs.ams.models.entities.GradeLevel;
 import com.pshs.ams.models.entities.Guardian;
 import com.pshs.ams.models.enums.CodeStatus;
 import com.pshs.ams.services.interfaces.GuardianService;
@@ -23,7 +22,7 @@ public class GuardianServiceImpl implements GuardianService {
 	 */
 	@Override
 	public List<Guardian> getAllGuardian(Sort sort, Page page) {
-		return GradeLevel.findAll(sort).page(page).list();
+		return Guardian.findAll(sort).page(page).list();
 	}
 
 	/**
@@ -52,7 +51,7 @@ public class GuardianServiceImpl implements GuardianService {
 		}
 
 		// Check if exists
-		if (Guardian.find("name", guardian.getFullName()).count() > 0) {
+		if (Guardian.find("fullName", guardian.getFullName()).count() > 0) {
 			return CodeStatus.EXISTS;
 		}
 
@@ -68,15 +67,16 @@ public class GuardianServiceImpl implements GuardianService {
 	 */
 	@Override
 	@Transactional
-	public CodeStatus updateGuardian(Guardian guardian) {
+	public CodeStatus updateGuardian(Guardian guardian, Integer id) {
 		// The id should not be null
-		if (guardian.getId() == null) {
+		if (guardian.getId() == null || id <= 0) {
 			return CodeStatus.BAD_REQUEST;
 		}
 
 		// Check if exists
-		if (Guardian.find("name", guardian.getFullName()).count() > 0) {
-			return CodeStatus.EXISTS;
+		Optional<Guardian> existingGuardian = Guardian.findByIdOptional(id);
+		if (existingGuardian.isEmpty()) {
+			return CodeStatus.NOT_FOUND;
 		}
 
 		if (guardian.isPersistent()) {

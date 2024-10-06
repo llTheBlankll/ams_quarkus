@@ -122,6 +122,6 @@ public class TeacherServiceImpl implements TeacherService {
 			return List.of();
 		}
 
-		return Teacher.find("name like ?1", sort, "%" + name + "%").page(page).list();
+		return Teacher.find("firstName LIKE ?1 OR lastName LIKE ?2", sort, "%" + name + "%", "%" + name + "%").page(page).list();
 	}
 }

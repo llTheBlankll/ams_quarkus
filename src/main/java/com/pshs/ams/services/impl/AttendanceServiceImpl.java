@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.pshs.ams.models.dto.attendance.AttendanceDTO;
+import com.pshs.ams.models.dto.attendance.ClassroomDemographicsAttendanceDTO;
 import com.pshs.ams.models.dto.custom.DateRange;
 import com.pshs.ams.models.dto.custom.LineChartDTO;
 import com.pshs.ams.models.dto.custom.MessageDTO;
@@ -13,6 +14,8 @@ import com.pshs.ams.models.enums.*;
 import com.pshs.ams.models.interfaces.AttendanceForeignEntity;
 import com.pshs.ams.services.RealTimeAttendanceService;
 import com.pshs.ams.services.interfaces.AttendanceService;
+import com.pshs.ams.services.interfaces.ClassroomService;
+import com.pshs.ams.services.interfaces.StudentService;
 import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -23,7 +26,7 @@ import org.modelmapper.ModelMapper;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.temporal.IsoFields;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @ApplicationScoped
@@ -34,6 +37,12 @@ public class AttendanceServiceImpl implements AttendanceService {
 
 	@Inject
 	RealTimeAttendanceService realTimeAttendanceService;
+
+	@Inject
+	StudentService studentService;
+
+	@Inject
+	ClassroomService classroomService;
 
 	private final ObjectMapper objectMapper = new ObjectMapper();
 	private final ModelMapper modelMapper = new ModelMapper();
@@ -226,18 +235,66 @@ public class AttendanceServiceImpl implements AttendanceService {
 	 * @return total count of attendance
 	 */
 	@Override
-	public long countTotalByAttendanceByStatus(List<AttendanceStatus> attendanceStatus, DateRange dateRange, Integer id, AttendanceForeignEntity foreignEntity) {
+	public long countTotalByAttendanceByStatus(List<AttendanceStatus> attendanceStatus, DateRange dateRange, Long id, AttendanceForeignEntity foreignEntity) {
+		if (id <= 0) {
+			throw new Error("Invalid classroom id: " + id);
+		}
+		if (attendanceStatus == null || attendanceStatus.isEmpty()) {
+			throw new Error("Invalid attendance status: " + attendanceStatus);
+		}
+
 		logger.debug("Count total attendance by status: " + attendanceStatus);
 		logger.debug("Date Range: " + dateRange);
 		logger.debug("Foreign Entity: " + foreignEntity);
 
 		if (foreignEntity == AttendanceForeignEntity.STUDENT) {
-			return Attendance.count("status IN ?1 BETWEEN ?2 AND ?3 AND student.id = ?4", attendanceStatus, dateRange.getStartDate(), dateRange.getEndDate(), id);
+			// Check if exists
+			if (studentService.getStudent(id.longValue()).isEmpty()) {
+				return 0;
+			}
+
+			return Attendance.count("status IN ?1 AND date BETWEEN ?2 AND ?3 AND student.id = ?4", attendanceStatus, dateRange.getStartDate(), dateRange.getEndDate(), id);
 		} else if (foreignEntity == AttendanceForeignEntity.CLASSROOM) {
-			return Attendance.count("status IN ?1 BETWEEN ?2 AND ?3 AND classroom.id = ?4", attendanceStatus, dateRange.getStartDate(), dateRange.getEndDate(), id);
+			// Check if exists
+			if (classroomService.getClassroom(id).isEmpty()) {
+				return 0;
+			}
+
+			return Attendance.count("status IN ?1 AND date BETWEEN ?2 AND ?3 AND student.classroom.id = ?4", attendanceStatus, dateRange.getStartDate(), dateRange.getEndDate(), id);
 		}
 
 		return Attendance.count("status IN ?1 BETWEEN ?2 AND ?3", attendanceStatus, dateRange.getStartDate(), dateRange.getEndDate());
+	}
+
+	/**
+	 * Get classroom demographics chart
+	 *
+	 * @param statuses  list of {@link AttendanceStatus} to filter by
+	 * @param dateRange range of dates to filter by
+	 * @param id        classroom id
+	 * @return list of {@link ClassroomDemographicsAttendanceDTO} objects
+	 */
+	@Override
+	public ClassroomDemographicsAttendanceDTO getClassroomDemographicsChart(List<AttendanceStatus> statuses, DateRange dateRange, Long id) {
+		if (id <= 0) {
+			logger.debug("Invalid classroom id: " + id);
+			throw new Error("Invalid classroom id: " + id);
+		}
+		if (statuses == null || statuses.isEmpty()) {
+			logger.debug("Invalid attendance status: " + statuses);
+			throw new Error("Invalid attendance status: " + statuses);
+		}
+
+		// Check if classroom exists
+		Optional<Classroom> classroom = classroomService.getClassroom(id);
+		if (classroom.isEmpty()) {
+			logger.debug("Classroom not found: " + id);
+			throw new Error("Classroom not found: " + id);
+		}
+
+		long male = classroom.get().getStudents().stream().filter(student -> student.getSex() == Sex.MALE).count();
+		long female = classroom.get().getStudents().stream().filter(student -> student.getSex() == Sex.FEMALE).count();
+		return new ClassroomDemographicsAttendanceDTO(male, female);
 	}
 
 	/**
@@ -251,7 +308,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 	public long countTotalByAttendanceByStatus(List<AttendanceStatus> attendanceStatus, DateRange dateRange) {
 		logger.debug("Count total attendance by status: " + attendanceStatus);
 		logger.debug("Date Range: " + dateRange);
-		return Attendance.count("status IN ?1 BETWEEN ?2 AND ?3", attendanceStatus, dateRange.getStartDate(), dateRange.getEndDate());
+		return Attendance.count("status IN ?1 AND date BETWEEN ?2 AND ?3", attendanceStatus, dateRange.getStartDate(), dateRange.getEndDate());
 	}
 
 	/**
@@ -283,9 +340,9 @@ public class AttendanceServiceImpl implements AttendanceService {
 		// TODO: Add checks
 
 		if (foreignEntity == AttendanceForeignEntity.STUDENT) {
-			return Attendance.find("status IN ?1 BETWEEN ?2 AND ?3 AND student.id = ?4", sort, attendanceStatus, dateRange.getStartDate(), dateRange.getEndDate(), id).page(page).list();
+			return Attendance.find("status IN ?1 AND date BETWEEN ?2 AND ?3 AND student.id = ?4", sort, attendanceStatus, dateRange.getStartDate(), dateRange.getEndDate(), id).page(page).list();
 		} else if (foreignEntity == AttendanceForeignEntity.CLASSROOM) {
-			return Attendance.find("status IN ?1 BETWEEN ?2 AND ?3 AND classroom.id = ?4", sort, attendanceStatus, dateRange.getStartDate(), dateRange.getEndDate(), id).page(page).list();
+			return Attendance.find("status IN ?1 AND date BETWEEN ?2 AND ?3 AND student.classroom.id = ?4", sort, attendanceStatus, dateRange.getStartDate(), dateRange.getEndDate(), id).page(page).list();
 		}
 
 		return getAllAttendanceByStatusAndDateRange(attendanceStatus, dateRange, page, sort);
@@ -301,42 +358,51 @@ public class AttendanceServiceImpl implements AttendanceService {
 	 * @return list of {@link LineChartDTO} objects
 	 */
 	@Override
-	public LineChartDTO getLineChart(List<AttendanceStatus> statuses, DateRange dateRange, AttendanceForeignEntity foreignEntity, Integer id, TimeStack stack) {
+	public LineChartDTO getLineChart(List<AttendanceStatus> statuses, DateRange dateRange, AttendanceForeignEntity foreignEntity, Long id, TimeStack stack) {
 		List<String> labels = new ArrayList<>();
 		List<String> data = new ArrayList<>();
-		Map<String, Integer> dailyCounts = new HashMap<>();
+		Map<LocalDate, Long> dailyCounts = new TreeMap<>();
 
-		for (LocalDate date = dateRange.getStartDate(); date.isBefore(dateRange.getEndDate()); date = date.plusDays(1)) {
-			String dateString;
-			date = switch (stack) {
+		LocalDate currentDate = dateRange.getStartDate();
+		while (currentDate.isBefore(dateRange.getEndDate())) {
+//			String date;
+			LocalDate date;
+			LocalDate nextDate = switch (stack) {
 				case WEEK -> {
-					dateString = "Week " + date.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR) + ", " + date.getYear();
-					yield date.plusWeeks(1);
+//					date = "Week " + currentDate.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR) + ", " + currentDate.getYear();
+					date = currentDate.plusWeeks(1);
+					yield currentDate.plusWeeks(1);
 				}
 				case MONTH -> {
-					dateString = date.getMonth().toString() + ", " + date.getYear();
-					yield date.plusMonths(1);
+//					date = currentDate.getMonth().toString() + ", " + currentDate.getYear();
+					date = currentDate.plusMonths(1);
+					yield currentDate.plusMonths(1);
 				}
 				default -> {
-					dateString = date.toString();
-					yield date.plusDays(1);
+//					date = currentDate.toString();
+					date = currentDate.plusDays(1);
+					yield currentDate.plusDays(1);
 				}
 			};
-			if (!dailyCounts.containsKey(dateString)) {
-				dailyCounts.put(dateString, 0);
+
+			if (!dailyCounts.containsKey(date)) {
+				dailyCounts.put(date, 0L);
 			}
 
+			logger.debug("Count total attendance: " + new DateRange(currentDate, nextDate));
 			long attendances = 0;
-			if (foreignEntity == AttendanceForeignEntity.CLASSROOM) {
-				attendances = countTotalByAttendanceByStatus(statuses, new DateRange(dateRange.getStartDate(), date), id, foreignEntity);
-			} else if (foreignEntity == AttendanceForeignEntity.STUDENT) {
-				attendances = countTotalByAttendanceByStatus(statuses, new DateRange(dateRange.getStartDate(), date), id, foreignEntity);
+			if (foreignEntity == AttendanceForeignEntity.STUDENT) {
+				attendances = countTotalByAttendanceByStatus(statuses, new DateRange(currentDate, nextDate), id, foreignEntity);
+			} else if (foreignEntity == AttendanceForeignEntity.CLASSROOM) {
+				attendances = countTotalByAttendanceByStatus(statuses, new DateRange(currentDate, nextDate), id, foreignEntity);
 			}
-			dailyCounts.put(dateString, dailyCounts.get(dateString) + (int) attendances); // Add attendance count to the date
+			dailyCounts.put(date, dailyCounts.get(date) + Math.toIntExact(attendances));
+
+			currentDate = nextDate;
 		}
 
-		for (Map.Entry<String, Integer> entry : dailyCounts.entrySet()) {
-			labels.add(entry.getKey());
+		for (Map.Entry<LocalDate, Long> entry : dailyCounts.entrySet()) {
+			labels.add(entry.getKey().format(DateTimeFormatter.ofPattern("MMM dd, yyyy")));
 			data.add(entry.getValue().toString());
 		}
 
@@ -353,34 +419,43 @@ public class AttendanceServiceImpl implements AttendanceService {
 	public LineChartDTO getLineChart(List<AttendanceStatus> statuses, DateRange dateRange, TimeStack stack) {
 		List<String> labels = new ArrayList<>();
 		List<String> data = new ArrayList<>();
-		Map<String, Integer> dailyCounts = new HashMap<>();
+		Map<LocalDate, Integer> dailyCounts = new TreeMap<>();
 
-		for (LocalDate date = dateRange.getStartDate(); date.isBefore(dateRange.getEndDate()); date = date.plusDays(1)) {
-			String dateString;
-			date = switch (stack) {
+		LocalDate currentDate = dateRange.getStartDate();
+		while (currentDate.isBefore(dateRange.getEndDate())) {
+//			String date;
+			LocalDate date;
+			LocalDate nextDate = switch (stack) {
 				case WEEK -> {
-					dateString = "Week " + date.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR) + ", " + date.getYear();
-					yield date.plusWeeks(1);
+//					date = "Week " + currentDate.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR) + ", " + currentDate.getYear();
+					date = currentDate.plusWeeks(1);
+					yield currentDate.plusWeeks(1);
 				}
 				case MONTH -> {
-					dateString = date.getMonth().toString() + ", " + date.getYear();
-					yield date.plusMonths(1);
+//					date = currentDate.getMonth().toString() + ", " + currentDate.getYear();
+					date = currentDate.plusMonths(1);
+					yield currentDate.plusMonths(1);
 				}
 				default -> {
-					dateString = date.toString();
-					yield date.plusDays(1);
+//					date = currentDate.toString();
+					date = currentDate.plusDays(1);
+					yield currentDate.plusDays(1);
 				}
 			};
-			if (!dailyCounts.containsKey(dateString)) {
-				dailyCounts.put(dateString, 0);
+
+			if (!dailyCounts.containsKey(date)) {
+				dailyCounts.put(date, 0);
 			}
 
-			long attendances = countTotalByAttendanceByStatus(statuses, new DateRange(dateRange.getStartDate(), date));
-			dailyCounts.put(dateString, dailyCounts.get(dateString) + (int) attendances); // Add attendance count to the date
+			logger.debug("Count total attendance: " + new DateRange(currentDate, nextDate));
+			long attendances = countTotalByAttendanceByStatus(statuses, new DateRange(currentDate, nextDate));
+			dailyCounts.put(date, dailyCounts.get(date) + (int) attendances);
+
+			currentDate = nextDate;
 		}
 
-		for (Map.Entry<String, Integer> entry : dailyCounts.entrySet()) {
-			labels.add(entry.getKey());
+		for (Map.Entry<LocalDate, Integer> entry : dailyCounts.entrySet()) {
+			labels.add(entry.getKey().format(DateTimeFormatter.ofPattern("MMM dd, yyyy")));
 			data.add(entry.getValue().toString());
 		}
 
