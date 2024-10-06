@@ -1,6 +1,7 @@
 package com.pshs.ams.models.dto.user;
 
 import com.pshs.ams.models.enums.AttendanceStatus;
+import com.pshs.ams.models.enums.Role;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -24,7 +25,7 @@ public class UserDTO implements Serializable {
 	@Size(max = 128)
 	private String email;
 	private String profilePicture;
-	private AttendanceStatus role;
+	private Role role;
 	private Boolean isExpired;
 	private Boolean isLocked;
 	private Boolean isEnabled;

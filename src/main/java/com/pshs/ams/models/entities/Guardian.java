@@ -30,6 +30,6 @@ public class Guardian extends PanacheEntityBase {
 	@Column(name = "contact_number", length = 32)
 	private String contactNumber;
 
-	@OneToMany(mappedBy = "guardian")
+	@OneToMany(mappedBy = "guardian", cascade = CascadeType.ALL)
 	private Set<Student> students = new LinkedHashSet<>();
 }

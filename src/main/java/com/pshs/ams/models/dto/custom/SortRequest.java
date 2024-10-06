@@ -10,4 +10,8 @@ public class SortRequest {
 
 	@QueryParam("sortDirection")
 	public Sort.Direction sortDirection = Sort.Direction.Ascending;
+
+	public Sort toSort() {
+		return Sort.by(sortBy, sortDirection);
+	}
 }

@@ -31,5 +31,5 @@ public class ClassroomDTO implements Serializable {
 	private ClassroomTeacherDTO teacher;
 	@NotNull
 	private GradeLevelDTO gradeLevel;
-	private Set<StudentDTO> students = new LinkedHashSet<>();
+	private Set<ClassroomStudentDTO> students = new LinkedHashSet<>();
 }

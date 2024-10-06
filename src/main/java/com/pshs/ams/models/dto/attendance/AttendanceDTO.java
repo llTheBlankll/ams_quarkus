@@ -1,5 +1,6 @@
 package com.pshs.ams.models.dto.attendance;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.pshs.ams.models.dto.student.StudentDTO;
 import com.pshs.ams.models.enums.AttendanceStatus;
 import com.pshs.ams.models.interfaces.AttendanceForeignEntity;
@@ -24,8 +25,14 @@ public class AttendanceDTO implements Serializable {
 	private Integer id;
 	@NotNull
 	private AttendanceStatus status;
+
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
 	private LocalDate date;
+
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm:ss")
 	private LocalTime timeIn;
+
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm:ss")
 	private LocalTime timeOut;
 	private String notes;
 	private StudentDTO student;
