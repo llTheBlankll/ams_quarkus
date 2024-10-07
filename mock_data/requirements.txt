@@ -1,3 +1,5 @@
 faker
 bcrypt
 psycopg2
+python-dotenv
+numpy
