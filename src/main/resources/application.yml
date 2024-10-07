@@ -14,7 +14,8 @@ quarkus:
     host: 0.0.0.0
     port: 8080
     cors:
-      origins: "*"
+      ~: false
+      origins: http://localhost:4200,http://localhost:8080
 
 smallrye:
   jwt:
