@@ -91,7 +91,7 @@ public interface AttendanceService {
 	 * @param id        classroom id
 	 * @return list of {@link ClassroomDemographicsAttendanceDTO} objects
 	 */
-	ClassroomDemographicsAttendanceDTO getClassroomDemographicsChart(List<AttendanceStatus> statuses, DateRange dateRange, Long id);
+	ClassroomDemographicsAttendanceDTO getClassroomAttendanceDemographicsChart(List<AttendanceStatus> statuses, DateRange dateRange, Long id);
 
 	/**
 	 * Count total attendance

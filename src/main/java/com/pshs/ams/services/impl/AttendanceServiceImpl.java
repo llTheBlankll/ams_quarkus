@@ -275,7 +275,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 	 * @return list of {@link ClassroomDemographicsAttendanceDTO} objects
 	 */
 	@Override
-	public ClassroomDemographicsAttendanceDTO getClassroomDemographicsChart(List<AttendanceStatus> statuses, DateRange dateRange, Long id) {
+	public ClassroomDemographicsAttendanceDTO getClassroomAttendanceDemographicsChart(List<AttendanceStatus> statuses, DateRange dateRange, Long id) {
 		if (id <= 0) {
 			logger.debug("Invalid classroom id: " + id);
 			throw new Error("Invalid classroom id: " + id);
@@ -292,8 +292,8 @@ public class AttendanceServiceImpl implements AttendanceService {
 			throw new Error("Classroom not found: " + id);
 		}
 
-		long male = classroom.get().getStudents().stream().filter(student -> student.getSex() == Sex.MALE).count();
-		long female = classroom.get().getStudents().stream().filter(student -> student.getSex() == Sex.FEMALE).count();
+		long male = Attendance.count("status IN ?1 AND date BETWEEN ?2 AND ?3 AND student.classroom.id = ?4 AND cast(student.sex AS text) = ?5", statuses, dateRange.getStartDate(), dateRange.getEndDate(), id, Sex.MALE.name());
+		long female = Attendance.count("status IN ?1 AND date BETWEEN ?2 AND ?3 AND student.classroom.id = ?4 AND cast(student.sex AS text) = ?5", statuses, dateRange.getStartDate(), dateRange.getEndDate(), id, Sex.FEMALE.name());
 		return new ClassroomDemographicsAttendanceDTO(male, female);
 	}
 
@@ -338,6 +338,9 @@ public class AttendanceServiceImpl implements AttendanceService {
 	@Override
 	public List<Attendance> getAllAttendanceByStatusAndDateRange(List<AttendanceStatus> attendanceStatus, DateRange dateRange, AttendanceForeignEntity foreignEntity, Integer id, Page page, Sort sort) {
 		// TODO: Add checks
+		sort = Sort.by("date", "timeIn", "timeOut").descending();
+
+		logger.debug("Sorting by date, time in, and time out");
 
 		if (foreignEntity == AttendanceForeignEntity.STUDENT) {
 			return Attendance.find("status IN ?1 AND date BETWEEN ?2 AND ?3 AND student.id = ?4", sort, attendanceStatus, dateRange.getStartDate(), dateRange.getEndDate(), id).page(page).list();
@@ -359,50 +362,58 @@ public class AttendanceServiceImpl implements AttendanceService {
 	 */
 	@Override
 	public LineChartDTO getLineChart(List<AttendanceStatus> statuses, DateRange dateRange, AttendanceForeignEntity foreignEntity, Long id, TimeStack stack) {
+		logger.debug("Called getLineChart");
 		List<String> labels = new ArrayList<>();
 		List<String> data = new ArrayList<>();
-		Map<LocalDate, Long> dailyCounts = new TreeMap<>();
+		Map<DateRange, Long> dailyCounts = new TreeMap<>(Comparator.comparing(DateRange::getStartDate));
 
 		LocalDate currentDate = dateRange.getStartDate();
 		while (currentDate.isBefore(dateRange.getEndDate())) {
-//			String date;
-			LocalDate date;
 			LocalDate nextDate = switch (stack) {
-				case WEEK -> {
-//					date = "Week " + currentDate.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR) + ", " + currentDate.getYear();
-					date = currentDate.plusWeeks(1);
-					yield currentDate.plusWeeks(1);
-				}
-				case MONTH -> {
-//					date = currentDate.getMonth().toString() + ", " + currentDate.getYear();
-					date = currentDate.plusMonths(1);
-					yield currentDate.plusMonths(1);
-				}
-				default -> {
-//					date = currentDate.toString();
-					date = currentDate.plusDays(1);
-					yield currentDate.plusDays(1);
-				}
+				case WEEK -> currentDate.plusWeeks(1);
+				case MONTH -> currentDate.plusMonths(1);
+				case YEAR -> currentDate.plusYears(1);
+				default -> currentDate.plusDays(1);
 			};
 
-			if (!dailyCounts.containsKey(date)) {
-				dailyCounts.put(date, 0L);
+			DateRange periodRange = new DateRange(currentDate, nextDate);
+			if (!dailyCounts.containsKey(periodRange)) {
+				dailyCounts.put(periodRange, 0L);
 			}
 
-			logger.debug("Count total attendance: " + new DateRange(currentDate, nextDate));
+			logger.debug("Count total attendance: " + periodRange);
 			long attendances = 0;
-			if (foreignEntity == AttendanceForeignEntity.STUDENT) {
-				attendances = countTotalByAttendanceByStatus(statuses, new DateRange(currentDate, nextDate), id, foreignEntity);
-			} else if (foreignEntity == AttendanceForeignEntity.CLASSROOM) {
-				attendances = countTotalByAttendanceByStatus(statuses, new DateRange(currentDate, nextDate), id, foreignEntity);
+			if (foreignEntity == AttendanceForeignEntity.STUDENT || foreignEntity == AttendanceForeignEntity.CLASSROOM) {
+				attendances = countTotalByAttendanceByStatus(statuses, periodRange, id, foreignEntity);
 			}
-			dailyCounts.put(date, dailyCounts.get(date) + Math.toIntExact(attendances));
+			dailyCounts.put(periodRange, dailyCounts.get(periodRange) + Math.toIntExact(attendances));
 
 			currentDate = nextDate;
 		}
 
-		for (Map.Entry<LocalDate, Long> entry : dailyCounts.entrySet()) {
-			labels.add(entry.getKey().format(DateTimeFormatter.ofPattern("MMM dd, yyyy")));
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM d");
+		DateTimeFormatter yearFormatter = DateTimeFormatter.ofPattern("yyyy");
+
+		for (Map.Entry<DateRange, Long> entry : dailyCounts.entrySet()) {
+			LocalDate startDate = entry.getKey().getStartDate();
+			LocalDate endDate = entry.getKey().getEndDate().minusDays(1); // Subtract one day to show inclusive range
+
+			String label = switch (stack) {
+				case WEEK -> String.format("%s to %s, %s",
+					startDate.format(formatter),
+					endDate.format(formatter),
+					startDate.format(yearFormatter));
+				case MONTH -> String.format("%s to %s, %s",
+					startDate.format(formatter),
+					endDate.format(formatter),
+					startDate.format(yearFormatter));
+				case YEAR -> String.format("%s to %s",
+					startDate.format(yearFormatter),
+					endDate.format(yearFormatter));
+				default -> startDate.format(DateTimeFormatter.ofPattern("MMM d, yyyy"));
+			};
+
+			labels.add(label);
 			data.add(entry.getValue().toString());
 		}
 
@@ -417,6 +428,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 	 */
 	@Override
 	public LineChartDTO getLineChart(List<AttendanceStatus> statuses, DateRange dateRange, TimeStack stack) {
+		logger.debug("Called getLineChart, no foreign entity");
 		List<String> labels = new ArrayList<>();
 		List<String> data = new ArrayList<>();
 		Map<LocalDate, Integer> dailyCounts = new TreeMap<>();

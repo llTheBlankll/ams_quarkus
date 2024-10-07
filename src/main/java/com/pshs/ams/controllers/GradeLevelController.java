@@ -46,7 +46,7 @@ public class GradeLevelController {
 		return Response.ok(mapper.map(gradeLevelOptional.get(), GradeLevelDTO.class)).build();
 	}
 
-	@PUT
+	@POST
 	@Path("/create")
 	public Response createGradeLevel(GradeLevelDTO gradeLevelDTO) {
 		if (gradeLevelDTO == null) {

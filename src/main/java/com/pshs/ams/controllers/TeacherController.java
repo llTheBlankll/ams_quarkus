@@ -43,7 +43,7 @@ public class TeacherController {
 		return teacher.map(tch -> Response.ok(mapper.map(tch, TeacherDTO.class)).build()).orElseGet(() -> Response.status(Response.Status.NOT_FOUND).entity(new MessageDTO("Teacher not found", CodeStatus.NOT_FOUND)).build());
 	}
 
-	@PUT
+	@POST
 	@Path("/create")
 	public Response createTeacher(TeacherDTO teacherDTO) {
 		if (teacherDTO == null) {
@@ -92,7 +92,7 @@ public class TeacherController {
 		return Response.ok(teacherList.stream().map(tch -> mapper.map(tch, TeacherDTO.class)).toList()).build();
 	}
 
-	@POST
+	@PUT
 	@Path("/update/{id}")
 	public Response updateTeacher(TeacherDTO teacherDTO, @PathParam("id") Integer id) {
 		if (teacherDTO == null || id <= 0) {

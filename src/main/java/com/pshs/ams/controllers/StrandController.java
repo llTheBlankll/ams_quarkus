@@ -34,7 +34,7 @@ public class StrandController {
 		).stream().map(strand -> mapper.map(strand, StrandDTO.class)).toList()).build();
 	}
 
-	@PUT
+	@POST
 	@Path("/create")
 	public Response createStrand(StrandDTO strandDTO) {
 		if (strandDTO == null) {
@@ -86,7 +86,7 @@ public class StrandController {
 		return Response.status(Response.Status.NOT_FOUND).entity(new MessageDTO("Strand not found", CodeStatus.NOT_FOUND)).build();
 	}
 
-	@POST
+	@PUT
 	@Path("/update")
 	public Response updateStrand(StrandDTO strandDTO, @QueryParam("id") Integer id) {
 		if (strandDTO == null || id <= 0) {

@@ -12,7 +12,10 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Response;
+import org.jboss.logging.Logger;
 import org.modelmapper.ModelMapper;
+
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 @Path("/api/v1/attendances")
@@ -21,6 +24,8 @@ public class AttendanceController {
 	@Inject
 	AttendanceService attendanceService;
 	private final ModelMapper mapper = new ModelMapper();
+	@Inject
+	Logger logger;
 
 	@GET
 	@Path("/all")
@@ -32,7 +37,7 @@ public class AttendanceController {
 		).build();
 	}
 
-	@PUT
+	@POST
 	@Path("/create")
 	public Response createAttendance(AttendanceDTO attendanceDTO) {
 		if (attendanceDTO == null) {
@@ -73,27 +78,7 @@ public class AttendanceController {
 	}
 
 	@GET
-	@Path("/count/status/{entity}/{id}")
-	public Response countTotalAttendanceByStatus(@QueryParam("attendanceStatuses") String attendanceStatus, @BeanParam DateRange dateRange, @PathParam("entity") AttendanceForeignEntity foreignEntity, @PathParam("id") Long id) {
-		// TODO: Add checks. If the foreignEntity has id, make sure it matches the id
-
-		long count;
-		try {
-			count = attendanceService.countTotalByAttendanceByStatus(
-				UtilService.statusStringToList(attendanceStatus),
-				dateRange,
-				id,
-				foreignEntity
-			);
-		} catch (Exception e) {
-			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO(e.getMessage(), CodeStatus.BAD_REQUEST)).build();
-		}
-
-		return Response.ok(count).build();
-	}
-
-	@GET
-	@Path("/chart/demographics/classroom/{classroomId}")
+	@Path("/chart/pie/classroom/{classroomId}/demographics")
 	public Response getClassroomDemographicsChart(@QueryParam("attendanceStatuses") String statuses, @BeanParam DateRange dateRange, @PathParam("classroomId") Long id) {
 		if (id <= 0) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(
@@ -106,7 +91,7 @@ public class AttendanceController {
 
 		try {
 			return Response.ok(
-				attendanceService.getClassroomDemographicsChart(
+				attendanceService.getClassroomAttendanceDemographicsChart(
 					UtilService.statusStringToList(statuses),
 					dateRange,
 					id
@@ -120,10 +105,6 @@ public class AttendanceController {
 	@GET
 	@Path("/chart/line")
 	public Response getLineChart(@QueryParam("attendanceStatuses") String statuses, @BeanParam DateRange dateRange, @QueryParam("stack") TimeStack stack, @QueryParam("entity") AttendanceForeignEntity foreignEntity, @QueryParam("id") Long id) {
-		if (foreignEntity != null && id == null) {
-			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO("Id is null", CodeStatus.BAD_REQUEST)).build();
-		}
-
 		if (dateRange == null || dateRange.getStartDate() == null || dateRange.getEndDate() == null) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO("Date range is null or empty", CodeStatus.BAD_REQUEST)).build();
 		}
@@ -139,7 +120,8 @@ public class AttendanceController {
 		try {
 //			LineChartDTO lineChart = attendanceService.getLineChart(UtilService.statusStringToList(statuses), dateRange, stack);
 			LineChartDTO lineChart;
-			if (foreignEntity != null) {
+			if (foreignEntity != null && id != null) {
+				logger.debug("Called getLineChart");
 				lineChart = attendanceService.getLineChart(UtilService.statusStringToList(statuses), dateRange, foreignEntity, id, stack);
 			} else {
 				lineChart = attendanceService.getLineChart(UtilService.statusStringToList(statuses), dateRange, stack);
@@ -151,7 +133,7 @@ public class AttendanceController {
 	}
 
 	@GET
-	@Path("/{foreignEntity}/{id}/count/all")
+	@Path("/{foreignEntity}/{id}/all/count")
 	public Response countStudentTotalAttendance(@QueryParam("attendanceStatuses") String statuses, @BeanParam DateRange dateRange, @PathParam("id") Long id, @PathParam("foreignEntity") AttendanceForeignEntity foreignEntity) throws Exception {
 		if (id <= 0) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(
@@ -205,6 +187,7 @@ public class AttendanceController {
 
 		return Response.ok(
 			attendanceService.getAllAttendanceByStatusAndDateRange(UtilService.statusStringToList(statuses), dateRange, foreignEntity, id, pageRequest.toPage(), sortRequest.toSort())
+				.stream().map(attendance -> mapper.map(attendance, AttendanceDTO.class)).toList()
 		).build();
 	}
 }

@@ -62,7 +62,7 @@ public class StudentController {
 		).stream().map(student -> this.modelMapper.map(student, StudentDTO.class)).toList();
 	}
 
-	@PUT
+	@POST
 	@Path("/create")
 	public Response createStudent(StudentDTO studentDTO) {
 		if (studentDTO == null) {
@@ -126,7 +126,6 @@ public class StudentController {
 		};
 	}
 
-
 	@GET
 	@Path("/count")
 	public Response getTotalCount() {
@@ -140,7 +139,6 @@ public class StudentController {
 		long count = studentService.getTotalStudents(id);
 		return Response.ok(count).build();
 	}
-
 
 	@GET
 	@Path("/{id}")

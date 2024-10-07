@@ -16,6 +16,7 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Response;
 import org.modelmapper.ModelMapper;
 
+import java.time.Instant;
 import java.util.Optional;
 
 @ApplicationScoped
@@ -38,7 +39,7 @@ public class ClassroomController {
 		).build();
 	}
 
-	@PUT
+	@POST
 	@Path("/create")
 	public Response createClassroom(ClassroomDTO classroomDTO) {
 		if (classroomDTO == null) {
@@ -52,6 +53,10 @@ public class ClassroomController {
 
 		// Convert the dto to entity
 		Classroom classroom = mapper.map(classroomDTO, Classroom.class);
+		Instant now = Instant.now();
+		classroom.setCreatedAt(now);
+		classroom.setUpdatedAt(now);
+
 		CodeStatus status = classroomService.createClass(classroom);
 
 		return switch (status) {

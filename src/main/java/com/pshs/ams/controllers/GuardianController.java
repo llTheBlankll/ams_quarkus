@@ -49,7 +49,7 @@ public class GuardianController {
 		return Response.status(Response.Status.NOT_FOUND).entity(new MessageDTO("Guardian not found", CodeStatus.NOT_FOUND)).build();
 	}
 
-	@PUT
+	@POST
 	@Path("/create")
 	public Response createGuardian(GuardianDTO guardianDTO) {
 		if (guardianDTO == null) {
@@ -91,7 +91,7 @@ public class GuardianController {
 		};
 	}
 
-	@POST
+	@PUT
 	@Path("/update")
 	public Response updateGuardian(GuardianDTO guardianDTO, @QueryParam("id") Integer id) {
 		if (guardianDTO == null || id <= 0) {
