@@ -28,7 +28,10 @@ public class GradeLevelController {
 	@GET
 	@Path("/all")
 	public Response getAllGradeLevel(@BeanParam PageRequest pageRequest, @BeanParam SortRequest sortRequest) {
-		return Response.ok(gradeLevelService.getAllGradeLevel(Sort.by(sortRequest.sortBy, sortRequest.sortDirection), Page.of(pageRequest.page, pageRequest.size))).build();
+		return Response.ok(
+			gradeLevelService.getAllGradeLevel(Sort.by(sortRequest.sortBy, sortRequest.sortDirection), Page.of(pageRequest.page, pageRequest.size))
+				.stream().map(gl -> mapper.map(gl, GradeLevelDTO.class)).toList()
+		).build();
 	}
 
 	@GET

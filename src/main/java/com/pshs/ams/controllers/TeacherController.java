@@ -29,7 +29,9 @@ public class TeacherController {
 	@GET
 	@Path("/all")
 	public Response getAllTeacher(@BeanParam PageRequest pageRequest, @BeanParam SortRequest sortRequest) {
-		return Response.ok(teacherService.getAllTeacher(Sort.by(sortRequest.sortBy, sortRequest.sortDirection), Page.of(pageRequest.page, pageRequest.size))).build();
+		return Response.ok(teacherService.getAllTeacher(Sort.by(sortRequest.sortBy, sortRequest.sortDirection), Page.of(pageRequest.page, pageRequest.size))
+			.stream().map(teacher -> mapper.map(teacher, TeacherDTO.class)).toList()
+		).build();
 	}
 
 	@GET
