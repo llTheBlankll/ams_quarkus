@@ -23,6 +23,7 @@ public class TeacherDTO implements Serializable {
 	private String lastName;
 	@Size(max = 4)
 	private String middleInitial;
+	private String profilePicture;
 	private Integer age;
 	@Size(max = 32)
 	private String contactNumber;

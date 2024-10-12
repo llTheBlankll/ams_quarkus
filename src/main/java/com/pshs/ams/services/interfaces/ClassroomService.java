@@ -4,10 +4,10 @@ import com.pshs.ams.models.entities.Classroom;
 import com.pshs.ams.models.enums.CodeStatus;
 import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
-
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
+import jakarta.transaction.Transactional;
 
 public interface ClassroomService {
 
@@ -41,6 +41,7 @@ public interface ClassroomService {
 	 * @param id the id of the class to retrieve
 	 * @return the retrieved Classroom object
 	 */
+	@Transactional
 	Optional<Classroom> getClassroom(Long id);
 
 	/**

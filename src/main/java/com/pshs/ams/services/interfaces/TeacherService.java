@@ -4,6 +4,7 @@ import com.pshs.ams.models.entities.Teacher;
 import com.pshs.ams.models.enums.CodeStatus;
 import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
+import jakarta.transaction.Transactional;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -27,6 +28,7 @@ public interface TeacherService {
 	 * @param id the id of the {@link Teacher} to retrieve
 	 * @return the retrieved {@link Teacher} object
 	 */
+	@Transactional
 	Optional<Teacher> getTeacher(Long id);
 
 	/**

@@ -133,8 +133,7 @@ public class TeacherServiceImpl implements TeacherService {
 	public CodeStatus uploadTeacherProfilePicture(Long id, Path imagePath) {
 		Optional<Teacher> existingTeacher = Teacher.findByIdOptional(id);
 		if (existingTeacher.isPresent()) {
-			existingTeacher.get().setProfilePicture(imagePath.toString());
-			existingTeacher.get().persist();
+			Teacher.update("profilePicture = ?1 where id = ?2", imagePath.toString(), id);
 			return CodeStatus.OK;
 		}
 

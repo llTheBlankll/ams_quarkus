@@ -27,6 +27,7 @@ public class ClassroomDTO implements Serializable {
 	@NotNull
 	@Size(max = 255)
 	private String classroomName;
+	private String profilePicture;
 	private ClassroomTeacherDTO teacher;
 	@NotNull
 	private GradeLevelDTO gradeLevel;

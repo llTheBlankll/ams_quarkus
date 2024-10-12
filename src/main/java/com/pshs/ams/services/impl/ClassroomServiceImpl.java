@@ -106,11 +106,11 @@ public class ClassroomServiceImpl implements ClassroomService {
 	}
 
 	@Override
+	@Transactional
 	public CodeStatus uploadClassroomProfilePicture(Long id, Path imagePath) {
 		Optional<Classroom> existingClass = Classroom.findByIdOptional(id);
 		if (existingClass.isPresent()) {
-			existingClass.get().setProfilePicture(imagePath.toString());
-			existingClass.get().persist();
+			Classroom.update("profilePicture = ?1 where id = ?2", imagePath.toString(), id);
 			return CodeStatus.OK;
 		}
 		return CodeStatus.NOT_FOUND;
