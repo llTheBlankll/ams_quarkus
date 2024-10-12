@@ -10,6 +10,7 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import org.jboss.logging.Logger;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,7 +23,8 @@ public class ClassroomServiceImpl implements ClassroomService {
 	/**
 	 * Retrieves a list of all classes with optional sorting and pagination.
 	 *
-	 * @param sort a sorting object containing sorting parameters (sortBy, sortDirection)
+	 * @param sort a sorting object containing sorting parameters (sortBy,
+	 *             sortDirection)
 	 * @param page a pagination object containing pagination parameters (page, size)
 	 * @return a list of Classroom objects
 	 */
@@ -46,7 +48,8 @@ public class ClassroomServiceImpl implements ClassroomService {
 			return CodeStatus.BAD_REQUEST;
 		}
 
-		Optional<Classroom> existingClass = Classroom.find("classroomName", classroom.getClassroomName()).firstResultOptional();
+		Optional<Classroom> existingClass = Classroom.find("classroomName", classroom.getClassroomName())
+				.firstResultOptional();
 		if (existingClass.isPresent()) {
 			logger.debug("Class already exists: " + existingClass.get().getClassroomName());
 			return CodeStatus.EXISTS;
@@ -100,5 +103,16 @@ public class ClassroomServiceImpl implements ClassroomService {
 	public List<Classroom> searchClassroomByName(String name, Page page, Sort sort) {
 		logger.debug("Search Class: " + name);
 		return Classroom.find("classroomName LIKE ?1", sort, "%" + name + "%").page(page).list();
+	}
+
+	@Override
+	public CodeStatus uploadClassroomProfilePicture(Long id, Path imagePath) {
+		Optional<Classroom> existingClass = Classroom.findByIdOptional(id);
+		if (existingClass.isPresent()) {
+			existingClass.get().setProfilePicture(imagePath.toString());
+			existingClass.get().persist();
+			return CodeStatus.OK;
+		}
+		return CodeStatus.NOT_FOUND;
 	}
 }

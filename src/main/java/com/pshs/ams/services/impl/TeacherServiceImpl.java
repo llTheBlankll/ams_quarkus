@@ -10,6 +10,7 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import org.jboss.logging.Logger;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,7 +21,8 @@ public class TeacherServiceImpl implements TeacherService {
 	Logger logger;
 
 	/**
-	 * Retrieves a list of all {@link Teacher}s sorted and paged according to the given {@link Sort} and {@link Page}.
+	 * Retrieves a list of all {@link Teacher}s sorted and paged according to the
+	 * given {@link Sort} and {@link Page}.
 	 *
 	 * @param sort the {@link Sort} to sort the retrieved {@link Teacher}s
 	 * @param page the {@link Page} to page the retrieved {@link Teacher}s
@@ -38,7 +40,7 @@ public class TeacherServiceImpl implements TeacherService {
 	 * @return the retrieved {@link Teacher} object
 	 */
 	@Override
-	public Optional<Teacher> getTeacher(Integer id) {
+	public Optional<Teacher> getTeacher(Long id) {
 		return Teacher.findByIdOptional(id);
 	}
 
@@ -122,6 +124,19 @@ public class TeacherServiceImpl implements TeacherService {
 			return List.of();
 		}
 
-		return Teacher.find("firstName LIKE ?1 OR lastName LIKE ?2", sort, "%" + name + "%", "%" + name + "%").page(page).list();
+		return Teacher.find("firstName LIKE ?1 OR lastName LIKE ?2", sort, "%" + name + "%", "%" + name + "%").page(page)
+				.list();
+	}
+
+	@Override
+	@Transactional
+	public CodeStatus uploadTeacherProfilePicture(Long id, Path imagePath) {
+		return Teacher.findByIdOptional(id)
+				.map(teacher -> {
+					teacher.setProfilePicture(imagePath.toString());
+					teacher.persist();
+					return CodeStatus.OK;
+				})
+				.orElse(CodeStatus.NOT_FOUND);
 	}
 }
