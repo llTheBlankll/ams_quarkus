@@ -131,12 +131,13 @@ public class TeacherServiceImpl implements TeacherService {
 	@Override
 	@Transactional
 	public CodeStatus uploadTeacherProfilePicture(Long id, Path imagePath) {
-		return Teacher.findByIdOptional(id)
-				.map(teacher -> {
-					teacher.setProfilePicture(imagePath.toString());
-					teacher.persist();
-					return CodeStatus.OK;
-				})
-				.orElse(CodeStatus.NOT_FOUND);
+		Optional<Teacher> existingTeacher = Teacher.findByIdOptional(id);
+		if (existingTeacher.isPresent()) {
+			existingTeacher.get().setProfilePicture(imagePath.toString());
+			existingTeacher.get().persist();
+			return CodeStatus.OK;
+		}
+
+		return CodeStatus.NOT_FOUND;
 	}
 }

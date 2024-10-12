@@ -3,7 +3,6 @@ package com.pshs.ams.models.dto.attendance;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.pshs.ams.models.dto.student.StudentDTO;
 import com.pshs.ams.models.enums.AttendanceStatus;
-import com.pshs.ams.models.interfaces.AttendanceForeignEntity;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;

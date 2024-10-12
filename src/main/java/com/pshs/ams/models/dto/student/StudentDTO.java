@@ -3,7 +3,6 @@ package com.pshs.ams.models.dto.student;
 import com.pshs.ams.models.dto.grade_level.GradeLevelDTO;
 import com.pshs.ams.models.dto.strand.StrandDTO;
 import com.pshs.ams.models.enums.Sex;
-import com.pshs.ams.models.interfaces.AttendanceForeignEntity;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;

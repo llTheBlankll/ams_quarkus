@@ -15,8 +15,6 @@ import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 import org.modelmapper.ModelMapper;
 
-import java.util.stream.Collectors;
-
 @ApplicationScoped
 @Path("/api/v1/attendances")
 public class AttendanceController {

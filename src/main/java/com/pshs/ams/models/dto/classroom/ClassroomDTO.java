@@ -1,7 +1,6 @@
 package com.pshs.ams.models.dto.classroom;
 
 import com.pshs.ams.models.dto.grade_level.GradeLevelDTO;
-import com.pshs.ams.models.dto.student.StudentDTO;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;

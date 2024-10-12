@@ -36,7 +36,7 @@ public class TeacherController {
 
 	@GET
 	@Path("/{id}")
-	public Response getTeacherById(@PathParam("id") Integer id) {
+	public Response getTeacherById(@PathParam("id") Long id) {
 		if (id <= 0) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO("Invalid id", CodeStatus.BAD_REQUEST)).build();
 		}
@@ -96,7 +96,7 @@ public class TeacherController {
 
 	@PUT
 	@Path("/update/{id}")
-	public Response updateTeacher(TeacherDTO teacherDTO, @PathParam("id") Integer id) {
+	public Response updateTeacher(TeacherDTO teacherDTO, @PathParam("id") Long id) {
 		if (teacherDTO == null || id <= 0) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO("Teacher cannot be null or id cannot be less than or equal to zero", CodeStatus.BAD_REQUEST)).build();
 		}

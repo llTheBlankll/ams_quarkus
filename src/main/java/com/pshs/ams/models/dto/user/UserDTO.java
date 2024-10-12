@@ -1,6 +1,5 @@
 package com.pshs.ams.models.dto.user;
 
-import com.pshs.ams.models.enums.AttendanceStatus;
 import com.pshs.ams.models.enums.Role;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;

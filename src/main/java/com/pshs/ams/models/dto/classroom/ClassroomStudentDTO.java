@@ -2,7 +2,6 @@ package com.pshs.ams.models.dto.classroom;
 
 import com.pshs.ams.models.dto.grade_level.GradeLevelDTO;
 import com.pshs.ams.models.dto.strand.StrandDTO;
-import com.pshs.ams.models.dto.student.StudentClassroomDTO;
 import com.pshs.ams.models.dto.student.StudentGuardianDTO;
 import com.pshs.ams.models.dto.student.StudentScheduleDTO;
 import com.pshs.ams.models.enums.Sex;
