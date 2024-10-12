@@ -1,6 +1,5 @@
 package com.pshs.ams.models.entities;
 
-import com.pshs.ams.models.enums.AttendanceStatus;
 import com.pshs.ams.models.enums.Role;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;

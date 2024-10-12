@@ -2,7 +2,10 @@ package com.pshs.ams.websockets;
 
 import com.pshs.ams.services.RealTimeAttendanceService;
 import jakarta.inject.Inject;
-import jakarta.websocket.*;
+import jakarta.websocket.OnClose;
+import jakarta.websocket.OnError;
+import jakarta.websocket.OnOpen;
+import jakarta.websocket.Session;
 import jakarta.websocket.server.ServerEndpoint;
 import org.jboss.logging.Logger;
 

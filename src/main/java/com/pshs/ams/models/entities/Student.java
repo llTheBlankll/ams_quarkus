@@ -1,8 +1,6 @@
 package com.pshs.ams.models.entities;
 
-import com.pshs.ams.models.enums.AttendanceStatus;
 import com.pshs.ams.models.enums.Sex;
-import com.pshs.ams.models.interfaces.AttendanceForeignEntity;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;

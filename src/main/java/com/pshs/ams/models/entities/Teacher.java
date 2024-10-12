@@ -35,6 +35,10 @@ public class Teacher extends PanacheEntityBase {
 	@Column(name = "middle_initial", length = 4)
 	private String middleInitial;
 
+	@Size(max = 255)
+	@Column(name = "profile_picture")
+	private String profilePicture;
+
 	@Column(name = "age")
 	private Integer age;
 

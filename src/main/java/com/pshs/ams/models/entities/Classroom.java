@@ -1,6 +1,5 @@
 package com.pshs.ams.models.entities;
 
-import com.pshs.ams.models.interfaces.AttendanceForeignEntity;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -35,6 +34,10 @@ public class Classroom extends PanacheEntityBase {
 	@NotNull
 	@Column(name = "classroom_name", nullable = false)
 	private String classroomName;
+
+	@Size(max = 255)
+	@Column(name = "profile_picture")
+	private String profilePicture;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@OnDelete(action = OnDeleteAction.SET_NULL)
