@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS teachers (
 CREATE TABLE IF NOT EXISTS classrooms (
     id SERIAL PRIMARY KEY,
     room VARCHAR(255) NOT NULL,
-    classroom_name VARCHAR(255) NOT NULL,
+    classroom_name VARCHAR(255) NOT NULL UNIQUE,
     profile_picture VARCHAR(255) NULL,
     teacher_id INT NULL,
     grade_level_id INT NOT NULL,
@@ -120,6 +120,7 @@ CREATE TABLE IF NOT EXISTS students (
     first_name VARCHAR(128) NOT NULL,
     middle_initial VARCHAR(8) NULL,
     last_name VARCHAR(128) NOT NULL,
+    profile_picture VARCHAR(255) NULL,
     prefix VARCHAR(8) NULL,
     sex Sex NOT NULL,
     address TEXT,
@@ -175,5 +176,4 @@ CREATE INDEX attendance_status_idx on attendances (status);
 CREATE INDEX attendance_student_id_idx on attendances (student_id);
 
 -- * MAKE ATTENDANCE ENUM TYPE CHARACTER VARYING
-ALTER TABLE attendances
-ALTER COLUMN status TYPE CHARACTER VARYING;
+ALTER TABLE attendances ALTER COLUMN status TYPE CHARACTER VARYING;

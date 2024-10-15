@@ -57,4 +57,20 @@ public interface StudentService {
 	 * @return the retrieved Student
 	 */
 	Optional<Student> getStudent(Long id);
+
+	/**
+	 * Searches for students by name.
+	 *
+	 * @param name the name of the student to search for
+	 * @return a list of Student objects that match the search criteria
+	 */
+	List<Student> searchStudentByName(String name, Sort sort, Page page);
+
+	/**
+	 * Assigns a classroom to a student.
+	 *
+	 * @param id the id of the student to assign the classroom to
+	 * @param classroomId the id of the classroom to assign to the student
+	 */
+	CodeStatus assignClassroomToStudent(Long id, Long classroomId);
 }

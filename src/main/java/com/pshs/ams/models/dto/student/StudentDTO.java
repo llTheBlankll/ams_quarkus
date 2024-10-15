@@ -30,6 +30,8 @@ public class StudentDTO implements Serializable {
 	@NotNull
 	@Size(max = 128)
 	private String lastName;
+	@Size(max = 255)
+	private String profilePicture;
 	@Size(max = 8)
 	private String prefix;
 	private String address;

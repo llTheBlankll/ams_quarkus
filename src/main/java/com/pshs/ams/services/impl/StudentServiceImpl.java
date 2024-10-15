@@ -26,7 +26,8 @@ public class StudentServiceImpl implements StudentService {
 	/**
 	 * Retrieves a list of all students with optional sorting and pagination.
 	 *
-	 * @param sort a sorting object containing sorting parameters (sortBy, sortDirection)
+	 * @param sort a sorting object containing sorting parameters (sortBy,
+	 *             sortDirection)
 	 * @param page a pagination object containing pagination parameters (page, size)
 	 * @return a list of Student objects
 	 */
@@ -134,5 +135,39 @@ public class StudentServiceImpl implements StudentService {
 
 		// Return the student
 		return Student.findByIdOptional(id);
+	}
+
+	@Override
+	public CodeStatus assignClassroomToStudent(Long id, Long classroomId) {
+		// Check if exists
+		if (id <= 0 || classroomId <= 0) {
+			logger.debug("Invalid id: " + id + " or classroom id: " + classroomId);
+			return CodeStatus.BAD_REQUEST;
+		}
+
+		// Check if the student exists
+		Optional<Student> student = getStudent(id);
+		if (student.isEmpty()) {
+			logger.debug("Student not found: " + id);
+			return CodeStatus.NOT_FOUND;
+		}
+
+		// Check if the classroom exists
+		Optional<Classroom> classroom = classroomService.getClassroom(classroomId);
+		if (classroom.isEmpty()) {
+			logger.debug("Classroom not found: " + classroomId);
+			return CodeStatus.NOT_FOUND;
+		}
+
+		// Assign the classroom to the student
+		student.get().setClassroom(classroom.get());
+		student.get().persist();
+		return CodeStatus.OK;
+	}
+
+	@Override
+	public List<Student> searchStudentByName(String name, Sort sort, Page page) {
+		return Student.find("firstName LIKE ?1 OR lastName LIKE ?1", Sort.by("lastName"), "%" + name + "%").page(page)
+				.list();
 	}
 }

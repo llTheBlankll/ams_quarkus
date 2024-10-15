@@ -11,6 +11,7 @@ import jakarta.transaction.Transactional;
 import org.jboss.logging.Logger;
 
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -111,6 +112,63 @@ public class ClassroomServiceImpl implements ClassroomService {
 		Optional<Classroom> existingClass = Classroom.findByIdOptional(id);
 		if (existingClass.isPresent()) {
 			Classroom.update("profilePicture = ?1 where id = ?2", imagePath.toString(), id);
+			return CodeStatus.OK;
+		}
+		return CodeStatus.NOT_FOUND;
+	}
+
+	@Override
+	@Transactional
+	public CodeStatus updateClass(Classroom classroom) {
+		if (classroom.getId() == null) {
+			logger.debug("Classroom ID is null");
+			return CodeStatus.BAD_REQUEST;
+		}
+
+		Optional<Classroom> existingClass = Classroom.findByIdOptional(classroom.getId());
+		if (existingClass.isPresent()) {
+			Classroom existingClassroom = existingClass.get();
+			boolean updated = false;
+
+			if (classroom.getClassroomName() != null
+					&& !classroom.getClassroomName().equals(existingClassroom.getClassroomName())) {
+				logger.debug("Classroom name updated: " + classroom.getClassroomName());
+				existingClassroom.setClassroomName(classroom.getClassroomName());
+				updated = true;
+			}
+
+			if (classroom.getRoom() != null && !classroom.getRoom().equals(existingClassroom.getRoom())) {
+				logger.debug("Classroom room updated: " + classroom.getRoom());
+				existingClassroom.setRoom(classroom.getRoom());
+				updated = true;
+			}
+
+			if (classroom.getProfilePicture() != null
+					&& !classroom.getProfilePicture().equals(existingClassroom.getProfilePicture())) {
+				logger.debug("Classroom profile picture updated: " + classroom.getProfilePicture());
+				existingClassroom.setProfilePicture(classroom.getProfilePicture());
+				updated = true;
+			}
+
+			if (classroom.getTeacher() != null && !classroom.getTeacher().equals(existingClassroom.getTeacher())) {
+				logger.debug("Classroom teacher updated: " + classroom.getTeacher());
+				existingClassroom.setTeacher(classroom.getTeacher());
+				updated = true;
+			}
+
+			if (classroom.getGradeLevel() != null && !classroom.getGradeLevel().equals(existingClassroom.getGradeLevel())) {
+				logger.debug("Classroom grade level updated: " + classroom.getGradeLevel());
+				existingClassroom.setGradeLevel(classroom.getGradeLevel());
+				updated = true;
+			}
+
+			if (updated) {
+				existingClassroom.setUpdatedAt(Instant.now());
+				existingClassroom.persist();
+				logger.debug("Classroom updated: " + existingClassroom.getId());
+			} else {
+				logger.debug("No changes detected for classroom: " + existingClassroom.getId());
+			}
 			return CodeStatus.OK;
 		}
 		return CodeStatus.NOT_FOUND;

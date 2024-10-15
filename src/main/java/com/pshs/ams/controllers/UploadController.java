@@ -148,7 +148,7 @@ public class UploadController {
 
 	@POST
 	@Path("/teacher/{id}/profile-picture")
-	@Consumes("multipart/form-data")
+	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	@Transactional
 	public CompletableFuture<Response> uploadTeacherProfilePicture(@PathParam("id") Long id, FileUploadInput fileInput) {
 		return CompletableFuture.supplyAsync(() -> {
@@ -239,25 +239,36 @@ public class UploadController {
 
 	@POST
 	@Path("/classroom/{id}/profile-picture")
-	@Consumes("multipart/form-data")
+	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	@Transactional
 	public CompletableFuture<Response> uploadClassroomProfilePicture(@PathParam("id") Long id,
 			FileUploadInput fileInput) {
 		return CompletableFuture.supplyAsync(() -> {
 			return QuarkusTransaction.requiringNew().call(() -> {
 				logger.debug("Received upload request for classroom profile picture. Classroom ID: " + id);
+				logger.debug("FileUploadInput: " + fileInput);
 
 				Optional<Classroom> classroomOptional = classroomService.getClassroom(id);
 				if (classroomOptional.isEmpty()) {
+					logger.debug("Classroom not found");
 					return createErrorResponse(Response.Status.NOT_FOUND, "Classroom not found", CodeStatus.NOT_FOUND);
 				}
 
+				if (fileInput == null) {
+					logger.debug("FileUploadInput is null");
+					return createErrorResponse(Response.Status.BAD_REQUEST, "No input received", CodeStatus.BAD_REQUEST);
+				}
+
 				if (fileInput.file == null) {
+					logger.debug("No file received in FileUploadInput");
 					return createErrorResponse(Response.Status.BAD_REQUEST, "No file received", CodeStatus.BAD_REQUEST);
 				}
 
 				FileUpload file = fileInput.file;
+				logger.debug("Received file: " + file.fileName() + ", Content-Type: " + file.contentType());
+
 				if (!isValidImageFile(file.filePath(), file.contentType())) {
+					logger.debug("Invalid image file");
 					return createErrorResponse(Response.Status.BAD_REQUEST, "Invalid image file", CodeStatus.BAD_REQUEST);
 				}
 
@@ -270,12 +281,12 @@ public class UploadController {
 
 					CodeStatus status = classroomService.uploadClassroomProfilePicture(id, compressedFile.toPath());
 					if (status != CodeStatus.OK) {
+						logger.error("Failed to update classroom profile picture");
 						return createErrorResponse(Response.Status.INTERNAL_SERVER_ERROR,
 								"Failed to update classroom profile picture", CodeStatus.FAILED);
 					}
 
 					deleteOriginalFileIfCompressed(dest, compressedFile);
-
 					return Response.ok(new MessageDTO("Classroom profile picture updated successfully", CodeStatus.OK)).build();
 				} catch (IOException e) {
 					logger.error("IO error while processing file", e);
@@ -290,13 +301,16 @@ public class UploadController {
 	@Path("/classroom/{id}/profile-picture")
 	@Produces(MediaType.APPLICATION_OCTET_STREAM)
 	public Response getClassroomProfilePicture(@PathParam("id") Long id) {
+		logger.debug("Received request to get classroom profile picture. Classroom ID: " + id);
 		Optional<Classroom> classroom = classroomService.getClassroom(id);
 		if (classroom.isEmpty()) {
+			logger.debug("Classroom not found");
 			return createErrorResponse(Response.Status.NOT_FOUND, "Classroom not found", CodeStatus.NOT_FOUND);
 		}
 
 		String profilePicturePath = classroom.get().getProfilePicture();
 		if (profilePicturePath == null || profilePicturePath.isEmpty()) {
+			logger.debug("Profile picture not found");
 			return createErrorResponse(Response.Status.NOT_FOUND, "Profile picture not found", CodeStatus.NOT_FOUND);
 		}
 
@@ -307,13 +321,16 @@ public class UploadController {
 	@Path("/teacher/{id}/profile-picture")
 	@Produces(MediaType.APPLICATION_OCTET_STREAM)
 	public Response getTeacherProfilePicture(@PathParam("id") Long id) {
+		logger.debug("Received request to get teacher profile picture. Teacher ID: " + id);
 		Optional<Teacher> teacher = teacherService.getTeacher(id);
 		if (teacher.isEmpty()) {
+			logger.debug("Teacher not found");
 			return createErrorResponse(Response.Status.NOT_FOUND, "Teacher not found", CodeStatus.NOT_FOUND);
 		}
 
 		String profilePicturePath = teacher.get().getProfilePicture();
 		if (profilePicturePath == null || profilePicturePath.isEmpty()) {
+			logger.debug("Profile picture not found");
 			return createErrorResponse(Response.Status.NOT_FOUND, "Profile picture not found", CodeStatus.NOT_FOUND);
 		}
 

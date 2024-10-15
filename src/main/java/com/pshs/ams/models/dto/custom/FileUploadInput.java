@@ -1,9 +1,10 @@
 package com.pshs.ams.models.dto.custom;
 
-import org.jboss.resteasy.reactive.RestForm;
 import org.jboss.resteasy.reactive.multipart.FileUpload;
 
+import jakarta.ws.rs.FormParam;
+
 public class FileUploadInput {
-	@RestForm("file")
+	@FormParam("file")
 	public FileUpload file;
 }

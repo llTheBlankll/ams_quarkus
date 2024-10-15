@@ -53,16 +53,13 @@ public class TeacherController {
 		}
 
 		Teacher teacher = mapper.map(teacherDTO, Teacher.class);
-		CodeStatus status = teacherService.createTeacher(teacher);
+		TeacherDTO teacherResponse = mapper.map(teacherService.createTeacher(teacher), TeacherDTO.class);
 
-		return switch (status) {
-			case OK -> Response.ok(new MessageDTO("Teacher created", CodeStatus.OK)).build();
-			case BAD_REQUEST ->
-				Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO("Teacher cannot be null", CodeStatus.BAD_REQUEST)).build();
-			case EXISTS -> Response.ok(new MessageDTO("Teacher already exists", CodeStatus.EXISTS)).build();
-			default ->
-				Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new MessageDTO("Internal Server Error", CodeStatus.FAILED)).build();
-		};
+		if (teacherResponse == null) {
+			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO("Teacher cannot be null", CodeStatus.BAD_REQUEST)).build();
+		}
+
+		return Response.ok(teacherResponse).build();
 	}
 
 	@DELETE

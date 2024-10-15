@@ -50,6 +50,9 @@ public class Classroom extends PanacheEntityBase {
 	@JoinColumn(name = "grade_level_id", nullable = false)
 	private GradeLevel gradeLevel;
 
+	@OneToMany(mappedBy = "classroom")
+	private Set<Student> students = new LinkedHashSet<>();
+
 	@NotNull
 	@ColumnDefault("CURRENT_TIMESTAMP")
 	@Column(name = "created_at", nullable = false)
@@ -59,7 +62,4 @@ public class Classroom extends PanacheEntityBase {
 	@ColumnDefault("CURRENT_TIMESTAMP")
 	@Column(name = "updated_at", nullable = false)
 	private Instant updatedAt;
-
-	@OneToMany(mappedBy = "classroom")
-	private Set<Student> students = new LinkedHashSet<>();
 }

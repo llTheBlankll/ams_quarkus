@@ -6,12 +6,15 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
+import lombok.Setter;
+
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.LocalDate;
 
 @Getter
+@Setter
 @Entity
 @Table(name = "students")
 public class Student extends PanacheEntityBase {
@@ -32,6 +35,10 @@ public class Student extends PanacheEntityBase {
 	@NotNull
 	@Column(name = "last_name", nullable = false, length = 128)
 	private String lastName;
+
+	@Size(max = 255)
+	@Column(name = "profile_picture", nullable = true, length = 255)
+	private String profilePicture;
 
 	@Size(max = 8)
 	@Column(name = "prefix", length = 8)

@@ -48,25 +48,26 @@ public class TeacherServiceImpl implements TeacherService {
 	 * Creates a new {@link Teacher}.
 	 *
 	 * @param teacher the {@link Teacher} to create
-	 * @return the status of the creation
+	 * @return the persisted Teacher with assigned ID, or null if creation fails
 	 */
 	@Override
 	@Transactional
-	public CodeStatus createTeacher(Teacher teacher) {
+	public Teacher createTeacher(Teacher teacher) {
 		logger.debug("Creating Teacher: " + teacher.getLastName());
 		if (teacher.getId() != null) {
 			logger.debug("Teacher already exists with ID: " + teacher.getId());
-			return CodeStatus.BAD_REQUEST;
+			return null;
 		}
 
 		if (teacher.isPersistent()) {
 			// Already exists
 			logger.debug("Teacher already exists: " + teacher.getLastName());
-			return CodeStatus.EXISTS;
+			return null;
 		}
 
 		teacher.persist();
-		return CodeStatus.OK;
+		Teacher.flush(); // Ensure the entity is synchronized with the database
+		return teacher; // Return the persisted teacher with assigned ID
 	}
 
 	/**

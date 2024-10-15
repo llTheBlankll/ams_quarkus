@@ -28,6 +28,8 @@ public interface ClassroomService {
 	 */
 	CodeStatus createClass(Classroom classroom);
 
+	CodeStatus updateClass(Classroom classroom);
+
 	/**
 	 * Deletes the class with the given id.
 	 *

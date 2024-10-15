@@ -38,6 +38,34 @@ public class ClassroomController {
 				.build();
 	}
 
+	@PUT
+	@Path("/update")
+	public Response updateClassroom(ClassroomDTO classroomDTO) {
+		if (classroomDTO == null) {
+			return Response.status(Response.Status.BAD_REQUEST).entity(
+					new MessageDTO(
+							"Classroom cannot be null",
+							CodeStatus.BAD_REQUEST))
+					.build();
+		}
+
+		CodeStatus status = this.classroomService.updateClass(
+				mapper.map(classroomDTO, Classroom.class));
+
+		return switch (status) {
+			case OK -> Response.ok(
+					new MessageDTO(
+							"Classroom updated",
+							CodeStatus.OK))
+					.build();
+			default -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(
+					new MessageDTO(
+							"Internal Server Error",
+							CodeStatus.FAILED))
+					.build();
+		};
+	}
+
 	@POST
 	@Path("/create")
 	public Response createClassroom(ClassroomDTO classroomDTO) {

@@ -37,7 +37,7 @@ public interface TeacherService {
 	 * @param teacher the {@link Teacher} to create
 	 * @return the status of the creation
 	 */
-	CodeStatus createTeacher(Teacher teacher);
+	Teacher createTeacher(Teacher teacher);
 
 	/**
 	 * Updates an existing {@link Teacher}.
