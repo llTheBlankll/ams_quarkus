@@ -52,27 +52,46 @@ public class AttendanceServiceImpl implements AttendanceService {
 	}
 
 	/**
-	 * @param attendance
-	 * @return
+	 * Creates or updates an attendance record
+	 * 
+	 * @param attendance The attendance record to create or update
+	 * @param override   Whether to override an existing record
+	 * @return CodeStatus indicating the result of the operation
 	 */
 	@Override
-	public CodeStatus createAttendance(Attendance attendance) {
+	@Transactional
+	public CodeStatus createAttendance(Attendance attendance, Boolean override) {
 		if (attendance == null) {
 			logger.debug("Attendance is null");
 			return CodeStatus.NULL;
 		}
 
-		// Check if the student has the same attendance for today correlated to the date
-		// and status
-		boolean exists = Attendance.count("student = ?1 and date = ?2 and status = ?3", attendance.getStudent(),
-				attendance.getDate(), attendance.getStatus()) > 0;
-		if (exists) {
-			logger.debug("Student already has attendance for today correlated to the date and status");
-			return CodeStatus.EXISTS;
-		}
+		override = override != null && override;
 
-		attendance.persist();
-		return CodeStatus.OK;
+		try {
+			// Check if the student has the same attendance for today correlated to the date
+			// and status
+			Optional<Attendance> existingAttendance = Attendance.find(
+					"student = ?1 and date = ?2 and status = ?3",
+					attendance.getStudent(), attendance.getDate(), attendance.getStatus()).firstResultOptional();
+
+			if (existingAttendance.isPresent()) {
+				if (!override) {
+					logger.debug("Student already has attendance for today correlated to the date and status");
+					return CodeStatus.EXISTS;
+				}
+				logger.debug("Overriding attendance for student: " + attendance.getStudent().getId());
+				Attendance.deleteById(existingAttendance.get().getId());
+				Attendance.flush();
+			}
+
+			attendance.setId(null);
+			attendance.persistAndFlush();
+			return CodeStatus.OK;
+		} catch (Exception e) {
+			logger.error("Error creating attendance: " + e.getMessage(), e);
+			return CodeStatus.FAILED;
+		}
 	}
 
 	/**

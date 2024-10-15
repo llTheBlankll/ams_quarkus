@@ -20,7 +20,7 @@ import java.util.List;
 
 public interface AttendanceService {
 
-	CodeStatus createAttendance(Attendance student);
+	CodeStatus createAttendance(Attendance student, Boolean override);
 
 	MessageDTO fromWebSocket(RFIDCardDTO rfidCardDTO) throws JsonProcessingException;
 

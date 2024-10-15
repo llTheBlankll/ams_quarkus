@@ -47,18 +47,26 @@ public class AttendanceController {
 
 	@POST
 	@Path("/create")
-	public Response createAttendance(AttendanceDTO attendanceDTO) {
+	public Response createAttendance(AttendanceDTO attendanceDTO, @QueryParam("override") Boolean override) {
 		if (attendanceDTO == null) {
 			return Response.status(Response.Status.BAD_REQUEST)
 					.entity(new MessageDTO("Input is null", CodeStatus.NULL))
 					.build();
 		}
 		Attendance attendance = mapper.map(attendanceDTO, Attendance.class);
-		CodeStatus status = attendanceService.createAttendance(attendance);
+		CodeStatus status = attendanceService.createAttendance(attendance, override);
 		return switch (status) {
-			case OK -> Response.status(Response.Status.CREATED)
-					.entity(new MessageDTO("Attendance created successfully", status))
-					.build();
+			case OK -> {
+				if (override) {
+					yield Response.status(Response.Status.CREATED)
+							.entity(new MessageDTO("Attendance overridden successfully", status))
+							.build();
+				} else {
+					yield Response.status(Response.Status.CREATED)
+							.entity(new MessageDTO("Attendance created successfully", status))
+							.build();
+				}
+			}
 			case EXISTS -> Response.status(Response.Status.CONFLICT)
 					.entity(new MessageDTO("Attendance already exists", status))
 					.build();
