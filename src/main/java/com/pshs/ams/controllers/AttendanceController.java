@@ -1,5 +1,8 @@
 package com.pshs.ams.controllers;
 
+import java.time.LocalDate;
+import java.util.List;
+
 import org.jboss.logging.Logger;
 import org.modelmapper.ModelMapper;
 
@@ -218,5 +221,21 @@ public class AttendanceController {
 								id, pageRequest.toPage(), sortRequest.toSort())
 						.stream().map(attendance -> mapper.map(attendance, AttendanceDTO.class)).toList())
 				.build();
+	}
+
+	@GET
+	@Path("/today")
+	public Response getTodayAttendances(
+			@QueryParam("classroomId") Integer classroomId,
+			@QueryParam("gradeLevelId") Integer gradeLevelId,
+			@QueryParam("strandId") Integer strandId,
+			@QueryParam("studentId") Long studentId,
+			@BeanParam PageRequest pageRequest,
+			@BeanParam SortRequest sortRequest) {
+		LocalDate today = LocalDate.now();
+		List<Attendance> attendances = attendanceService.getFilteredAttendances(today, classroomId, gradeLevelId,
+				strandId, studentId, pageRequest.toPage(), sortRequest.toSort());
+		return Response.ok(
+				attendances.stream().map(attendance -> mapper.map(attendance, AttendanceDTO.class)).toList()).build();
 	}
 }

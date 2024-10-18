@@ -15,7 +15,7 @@ import com.pshs.ams.models.enums.TimeStack;
 import com.pshs.ams.models.interfaces.AttendanceForeignEntity;
 import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
-
+import java.time.LocalDate;
 import java.util.List;
 
 public interface AttendanceService {
@@ -137,4 +137,6 @@ public interface AttendanceService {
 	 * @return total count of attendance
 	 */
 	long totalStudentAttendance(Long studentId);
+
+	List<Attendance> getFilteredAttendances(LocalDate date, Integer classroomId, Integer gradeLevelId, Integer strandId, Long studentId, Page page, Sort sort);
 }

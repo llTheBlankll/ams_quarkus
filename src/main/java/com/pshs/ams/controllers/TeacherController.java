@@ -29,34 +29,39 @@ public class TeacherController {
 	@GET
 	@Path("/all")
 	public Response getAllTeacher(@BeanParam PageRequest pageRequest, @BeanParam SortRequest sortRequest) {
-		return Response.ok(teacherService.getAllTeacher(Sort.by(sortRequest.sortBy, sortRequest.sortDirection), Page.of(pageRequest.page, pageRequest.size))
-			.stream().map(teacher -> mapper.map(teacher, TeacherDTO.class)).toList()
-		).build();
+		return Response.ok(teacherService
+				.getAllTeacher(Sort.by(sortRequest.sortBy, sortRequest.sortDirection),
+						Page.of(pageRequest.page, pageRequest.size))
+				.stream().map(teacher -> mapper.map(teacher, TeacherDTO.class)).toList()).build();
 	}
 
 	@GET
 	@Path("/{id}")
 	public Response getTeacherById(@PathParam("id") Long id) {
 		if (id <= 0) {
-			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO("Invalid id", CodeStatus.BAD_REQUEST)).build();
+			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO("Invalid id", CodeStatus.BAD_REQUEST))
+					.build();
 		}
 
 		Optional<Teacher> teacher = teacherService.getTeacher(id);
-		return teacher.map(tch -> Response.ok(mapper.map(tch, TeacherDTO.class)).build()).orElseGet(() -> Response.status(Response.Status.NOT_FOUND).entity(new MessageDTO("Teacher not found", CodeStatus.NOT_FOUND)).build());
+		return teacher.map(tch -> Response.ok(mapper.map(tch, TeacherDTO.class)).build()).orElseGet(() -> Response
+				.status(Response.Status.NOT_FOUND).entity(new MessageDTO("Teacher not found", CodeStatus.NOT_FOUND)).build());
 	}
 
 	@POST
 	@Path("/create")
 	public Response createTeacher(TeacherDTO teacherDTO) {
 		if (teacherDTO == null) {
-			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO("Teacher cannot be null", CodeStatus.BAD_REQUEST)).build();
+			return Response.status(Response.Status.BAD_REQUEST)
+					.entity(new MessageDTO("Teacher cannot be null", CodeStatus.BAD_REQUEST)).build();
 		}
 
 		Teacher teacher = mapper.map(teacherDTO, Teacher.class);
 		TeacherDTO teacherResponse = mapper.map(teacherService.createTeacher(teacher), TeacherDTO.class);
 
 		if (teacherResponse == null) {
-			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO("Teacher cannot be null", CodeStatus.BAD_REQUEST)).build();
+			return Response.status(Response.Status.BAD_REQUEST)
+					.entity(new MessageDTO("Teacher cannot be null", CodeStatus.BAD_REQUEST)).build();
 		}
 
 		return Response.ok(teacherResponse).build();
@@ -66,28 +71,35 @@ public class TeacherController {
 	@Path("/{id}")
 	public Response deleteTeacher(@PathParam("id") Integer id) {
 		if (id <= 0) {
-			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO("Invalid id", CodeStatus.BAD_REQUEST)).build();
+			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO("Invalid id", CodeStatus.BAD_REQUEST))
+					.build();
 		}
 
 		return switch (teacherService.deleteTeacher(id)) {
 			case OK -> Response.ok(new MessageDTO("Teacher deleted", CodeStatus.OK)).build();
 			case BAD_REQUEST ->
-				Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO("Invalid id", CodeStatus.BAD_REQUEST)).build();
+				Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO("Invalid id", CodeStatus.BAD_REQUEST))
+						.build();
 			case NOT_FOUND ->
-				Response.status(Response.Status.NOT_FOUND).entity(new MessageDTO("Teacher not found", CodeStatus.NOT_FOUND)).build();
+				Response.status(Response.Status.NOT_FOUND).entity(new MessageDTO("Teacher not found", CodeStatus.NOT_FOUND))
+						.build();
 			default ->
-				Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new MessageDTO("Internal Server Error", CodeStatus.FAILED)).build();
+				Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+						.entity(new MessageDTO("Internal Server Error", CodeStatus.FAILED)).build();
 		};
 	}
 
 	@GET
 	@Path("/search/name/{name}")
-	public Response getTeacherByName(@PathParam("name") String name, @BeanParam PageRequest pageRequest, @BeanParam SortRequest sortRequest) {
+	public Response getTeacherByName(@PathParam("name") String name, @BeanParam PageRequest pageRequest,
+			@BeanParam SortRequest sortRequest) {
 		if (name.isEmpty()) {
-			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO("Name cannot be empty", CodeStatus.BAD_REQUEST)).build();
+			return Response.status(Response.Status.BAD_REQUEST)
+					.entity(new MessageDTO("Name cannot be empty", CodeStatus.BAD_REQUEST)).build();
 		}
 
-		List<Teacher> teacherList = teacherService.searchTeacherByName(name, Page.of(pageRequest.page, pageRequest.size), Sort.by(sortRequest.sortBy, sortRequest.sortDirection));
+		List<Teacher> teacherList = teacherService.searchTeacherByName(name, Page.of(pageRequest.page, pageRequest.size),
+				Sort.by(sortRequest.sortBy, sortRequest.sortDirection));
 		return Response.ok(teacherList.stream().map(tch -> mapper.map(tch, TeacherDTO.class)).toList()).build();
 	}
 
@@ -95,22 +107,27 @@ public class TeacherController {
 	@Path("/update/{id}")
 	public Response updateTeacher(TeacherDTO teacherDTO, @PathParam("id") Long id) {
 		if (teacherDTO == null || id <= 0) {
-			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO("Teacher cannot be null or id cannot be less than or equal to zero", CodeStatus.BAD_REQUEST)).build();
+			return Response.status(Response.Status.BAD_REQUEST).entity(
+					new MessageDTO("Teacher cannot be null or id cannot be less than or equal to zero", CodeStatus.BAD_REQUEST))
+					.build();
 		}
 
 		// Check if exists
 		Optional<Teacher> teacherOptional = teacherService.getTeacher(id);
 		if (teacherOptional.isEmpty()) {
-			return Response.status(Response.Status.NOT_FOUND).entity(new MessageDTO("Teacher not found", CodeStatus.NOT_FOUND)).build();
+			return Response.status(Response.Status.NOT_FOUND)
+					.entity(new MessageDTO("Teacher not found", CodeStatus.NOT_FOUND)).build();
 		}
 
 		Teacher teacher = mapper.map(teacherDTO, Teacher.class);
 		return switch (teacherService.updateTeacher(teacher)) {
 			case OK -> Response.ok(new MessageDTO("Teacher updated", CodeStatus.OK)).build();
 			case BAD_REQUEST ->
-				Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO("Teacher cannot be null", CodeStatus.BAD_REQUEST)).build();
+				Response.status(Response.Status.BAD_REQUEST)
+						.entity(new MessageDTO("Teacher cannot be null", CodeStatus.BAD_REQUEST)).build();
 			default ->
-				Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new MessageDTO("Internal Server Error", CodeStatus.FAILED)).build();
+				Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+						.entity(new MessageDTO("Internal Server Error", CodeStatus.FAILED)).build();
 		};
 	}
 }

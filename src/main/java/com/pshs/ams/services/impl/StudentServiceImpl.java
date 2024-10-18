@@ -2,7 +2,10 @@ package com.pshs.ams.services.impl;
 
 import com.pshs.ams.models.entities.Classroom;
 import com.pshs.ams.models.entities.Student;
+import com.pshs.ams.models.entities.Strand;
 import com.pshs.ams.models.enums.CodeStatus;
+import com.pshs.ams.models.dto.custom.LineChartDTO;
+import com.pshs.ams.models.dto.strand.MostPopularStrandDTO;
 import com.pshs.ams.services.interfaces.ClassroomService;
 import com.pshs.ams.services.interfaces.StudentService;
 import io.quarkus.panache.common.Page;
@@ -11,8 +14,12 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class StudentServiceImpl implements StudentService {
@@ -169,5 +176,69 @@ public class StudentServiceImpl implements StudentService {
 	public List<Student> searchStudentByName(String name, Sort sort, Page page) {
 		return Student.find("firstName LIKE ?1 OR lastName LIKE ?1", Sort.by("lastName"), "%" + name + "%").page(page)
 				.list();
+	}
+
+	@Override
+	public long getStudentCountByStrand(Long strandId) {
+		return Student.count("strand.id", strandId);
+	}
+
+	@Override
+	public long getStudentCountByGradeLevel(Long gradeLevelId) {
+		return Student.count("gradeLevel.id", gradeLevelId);
+	}
+
+	@Override
+	public Optional<MostPopularStrandDTO> getMostPopularStrand() {
+		List<Object[]> result = Strand.find("SELECT s.id, s.name, COUNT(st) as studentCount " +
+				"FROM Strand s LEFT JOIN s.students st " +
+				"GROUP BY s.id, s.name " +
+				"ORDER BY studentCount DESC")
+				.project(Object[].class)
+				.page(Page.ofSize(1))
+				.list();
+		
+		if (result.isEmpty()) {
+			return Optional.empty();
+		}
+
+		Object[] mostPopular = result.get(0);
+		return Optional.of(new MostPopularStrandDTO(
+			(Integer) mostPopular[0],
+			(String) mostPopular[1],
+			((Number) mostPopular[2]).longValue()
+		));
+	}
+
+	@Override
+	public double getAverageStudentsPerStrand() {
+		Long totalStudents = Student.count();
+		Long totalStrands = Strand.count();
+		return totalStrands == 0 ? 0 : (double) totalStudents / totalStrands;
+	}
+
+	@Override
+	public LineChartDTO getStrandDistribution(LocalDate startDate, LocalDate endDate) {
+		// Convert the LocalDate to LocalDateTime
+		LocalDateTime startDateTime = startDate.atStartOfDay();
+		LocalDateTime endDateTime = endDate.atTime(LocalTime.MAX);
+
+		List<Object[]> results = Student.find("SELECT s.name, COUNT(st) " +
+				"FROM Student st JOIN st.strand s " +
+				"WHERE st.createdAt BETWEEN ?1 AND ?2 " +
+				"GROUP BY s.name " +
+				"ORDER BY s.name", startDateTime, endDateTime)
+				.project(Object[].class)
+				.list();
+
+		List<String> labels = results.stream()
+				.map(r -> (String) r[0])
+				.collect(Collectors.toList());
+
+		List<String> data = results.stream()
+				.map(r -> String.valueOf((Long) r[1]))
+				.collect(Collectors.toList());
+
+		return new LineChartDTO(labels, data);
 	}
 }

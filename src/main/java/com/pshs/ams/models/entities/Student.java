@@ -12,6 +12,7 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -79,4 +80,10 @@ public class Student extends PanacheEntityBase {
 	@OnDelete(action = OnDeleteAction.SET_NULL)
 	@JoinColumn(name = "student_schedule_id")
 	private StudentSchedule studentSchedule;
+
+	@Column(name = "created_at", nullable = false)
+	private LocalDateTime createdAt;
+
+	@Column(name = "updated_at", nullable = false)
+	private LocalDateTime updatedAt;
 }

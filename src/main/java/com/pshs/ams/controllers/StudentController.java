@@ -1,33 +1,34 @@
 package com.pshs.ams.controllers;
 
+import com.pshs.ams.models.dto.custom.LineChartDTO;
 import com.pshs.ams.models.dto.custom.MessageDTO;
 import com.pshs.ams.models.dto.custom.PageRequest;
 import com.pshs.ams.models.dto.custom.SortRequest;
+import com.pshs.ams.models.dto.strand.MostPopularStrandDTO;
 import com.pshs.ams.models.dto.student.StudentDTO;
 import com.pshs.ams.models.entities.Student;
 import com.pshs.ams.models.enums.CodeStatus;
 import com.pshs.ams.services.interfaces.StudentService;
+
 import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
-import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
-import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.modelmapper.ModelMapper;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
 @Path("/api/v1/students")
-@ApplicationScoped
-@Tag(name = "Student API")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
 public class StudentController {
 
 	@Inject
@@ -45,12 +46,12 @@ public class StudentController {
 	@GET
 	@Path("/all")
 	@Operation(summary = "Get All Students", description = "Get all students.")
-	@Parameters(value = {
-			@Parameter(name = "page", in = ParameterIn.QUERY, schema = @Schema(type = SchemaType.INTEGER, format = "int32")),
-			@Parameter(name = "size", in = ParameterIn.QUERY, schema = @Schema(type = SchemaType.INTEGER, format = "int32")),
-			@Parameter(name = "sortBy", in = ParameterIn.QUERY, schema = @Schema(type = SchemaType.STRING)),
-			@Parameter(name = "sortDirection", in = ParameterIn.QUERY, schema = @Schema(type = SchemaType.STRING))
-	})
+	// @Parameters(value = {
+	// 		@Parameter(name = "page", in = ParameterIn.QUERY, schema = @Schema(type = SchemaType.INTEGER, format = "int32")),
+	// 		@Parameter(name = "size", in = ParameterIn.QUERY, schema = @Schema(type = SchemaType.INTEGER, format = "int32")),
+	// 		@Parameter(name = "sortBy", in = ParameterIn.QUERY, schema = @Schema(type = SchemaType.STRING)),
+	// 		@Parameter(name = "sortDirection", in = ParameterIn.QUERY, schema = @Schema(type = SchemaType.STRING))
+	// })
 	public List<StudentDTO> getAllStudent(
 			@BeanParam SortRequest sortRequest,
 			@BeanParam PageRequest pageRequest) {
@@ -167,4 +168,52 @@ public class StudentController {
 					CodeStatus.FAILED)).build();
 		};
 	}
+
+    @GET
+    @Path("/count/strand/{strandId}")
+    @Operation(summary = "Get student count by strand")
+    public Response getStudentCountByStrand(@PathParam("strandId") Long strandId) {
+        long count = studentService.getStudentCountByStrand(strandId);
+        return Response.ok(count).build();
+    }
+
+    @GET
+    @Path("/count/grade-level/{gradeLevelId}")
+    @Operation(summary = "Get student count by grade level")
+    public Response getStudentCountByGradeLevel(@PathParam("gradeLevelId") Long gradeLevelId) {
+        long count = studentService.getStudentCountByGradeLevel(gradeLevelId);
+        return Response.ok(count).build();
+    }
+
+    @GET
+    @Path("/most-popular-strand")
+    @Operation(summary = "Get most popular strand")
+    public Response getMostPopularStrand() {
+        Optional<MostPopularStrandDTO> result = studentService.getMostPopularStrand();
+        if (result.isPresent()) {
+            return Response.ok(result.get()).build();
+        }
+
+        return Response.status(Response.Status.NOT_FOUND).build();
+    }
+
+    @GET
+    @Path("/average-per-strand")
+    @Operation(summary = "Get average students per strand")
+    public Response getAverageStudentsPerStrand() {
+        double average = studentService.getAverageStudentsPerStrand();
+        return Response.ok(average).build();
+    }
+
+    @GET
+    @Path("/strand-distribution")
+    @Operation(summary = "Get strand distribution")
+    public Response getStrandDistribution(
+            @QueryParam("startDate") String startDateStr,
+            @QueryParam("endDate") String endDateStr) {
+        LocalDate startDate = LocalDate.parse(startDateStr);
+        LocalDate endDate = LocalDate.parse(endDateStr);
+        LineChartDTO chartData = studentService.getStrandDistribution(startDate, endDate);
+        return Response.ok(chartData).build();
+    }
 }

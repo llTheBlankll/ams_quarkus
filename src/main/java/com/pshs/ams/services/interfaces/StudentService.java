@@ -2,9 +2,13 @@ package com.pshs.ams.services.interfaces;
 
 import com.pshs.ams.models.entities.Student;
 import com.pshs.ams.models.enums.CodeStatus;
+import com.pshs.ams.models.dto.custom.LineChartDTO;
+import com.pshs.ams.models.dto.strand.MostPopularStrandDTO;
+
 import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -73,4 +77,14 @@ public interface StudentService {
 	 * @param classroomId the id of the classroom to assign to the student
 	 */
 	CodeStatus assignClassroomToStudent(Long id, Long classroomId);
+
+	long getStudentCountByStrand(Long strandId);
+
+	long getStudentCountByGradeLevel(Long gradeLevelId);
+
+	Optional<MostPopularStrandDTO> getMostPopularStrand();
+
+	double getAverageStudentsPerStrand();
+
+	LineChartDTO getStrandDistribution(LocalDate startDate, LocalDate endDate);
 }

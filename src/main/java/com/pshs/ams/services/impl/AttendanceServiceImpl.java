@@ -28,6 +28,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class AttendanceServiceImpl implements AttendanceService {
@@ -390,7 +391,6 @@ public class AttendanceServiceImpl implements AttendanceService {
 
 		return getAllAttendanceByStatusAndDateRange(attendanceStatus, dateRange, page, sort);
 	}
-
 	/**
 	 * Get line chart data
 	 *
@@ -595,4 +595,34 @@ public class AttendanceServiceImpl implements AttendanceService {
 		logger.debug("Get total student attendance: " + studentId);
 		return Attendance.count("student.id = ?1", studentId);
 	}
+
+	@Override
+	public List<Attendance> getFilteredAttendances(LocalDate date, Integer classroomId, Integer gradeLevelId, Integer strandId, Long studentId, Page page, Sort sort) {
+		Map<String, Object> params = new HashMap<>();
+		StringBuilder query = new StringBuilder("date = :date");
+		params.put("date", date);
+
+		if (classroomId != null) {
+			query.append(" and student.classroom.id = :classroomId");
+			params.put("classroomId", classroomId);
+		}
+
+		if (gradeLevelId != null) {
+			query.append(" and student.gradeLevel.id = :gradeLevelId");
+			params.put("gradeLevelId", gradeLevelId);
+		}
+
+		if (strandId != null) {
+			query.append(" and student.strand.id = :strandId");
+			params.put("strandId", strandId);
+		}
+
+		if (studentId != null) {
+			query.append(" and student.id = :studentId");
+			params.put("studentId", studentId);
+		}
+
+		return Attendance.find(query.toString(), sort, params).page(page).list();
+	}
+
 }

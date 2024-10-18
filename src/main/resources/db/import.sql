@@ -130,6 +130,8 @@ CREATE TABLE IF NOT EXISTS students (
     strand_id INT,
     guardian_id INT,
     student_schedule_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CHECK (LENGTH(first_name) >= 2),
     CHECK (LENGTH(last_name) >= 2),
     FOREIGN KEY (grade_level_id) REFERENCES grade_levels (id) ON DELETE SET NULL,
