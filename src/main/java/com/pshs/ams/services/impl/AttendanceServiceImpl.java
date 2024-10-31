@@ -1,5 +1,19 @@
 package com.pshs.ams.services.impl;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.TreeMap;
+
+import org.jboss.logging.Logger;
+import org.modelmapper.ModelMapper;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -9,26 +23,27 @@ import com.pshs.ams.models.dto.custom.DateRange;
 import com.pshs.ams.models.dto.custom.LineChartDTO;
 import com.pshs.ams.models.dto.custom.MessageDTO;
 import com.pshs.ams.models.dto.custom.RFIDCardDTO;
-import com.pshs.ams.models.entities.*;
-import com.pshs.ams.models.enums.*;
+import com.pshs.ams.models.entities.Attendance;
+import com.pshs.ams.models.entities.Classroom;
+import com.pshs.ams.models.entities.RfidCredential;
+import com.pshs.ams.models.entities.Student;
+import com.pshs.ams.models.entities.StudentSchedule;
+import com.pshs.ams.models.enums.AttendanceMode;
+import com.pshs.ams.models.enums.AttendanceStatus;
+import com.pshs.ams.models.enums.CodeStatus;
+import com.pshs.ams.models.enums.Sex;
+import com.pshs.ams.models.enums.TimeStack;
 import com.pshs.ams.models.interfaces.AttendanceForeignEntity;
 import com.pshs.ams.services.RealTimeAttendanceService;
 import com.pshs.ams.services.interfaces.AttendanceService;
 import com.pshs.ams.services.interfaces.ClassroomService;
 import com.pshs.ams.services.interfaces.StudentService;
+
 import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import org.jboss.logging.Logger;
-import org.modelmapper.ModelMapper;
-
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class AttendanceServiceImpl implements AttendanceService {
@@ -54,7 +69,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
 	/**
 	 * Creates or updates an attendance record
-	 * 
+	 *
 	 * @param attendance The attendance record to create or update
 	 * @param override   Whether to override an existing record
 	 * @return CodeStatus indicating the result of the operation
@@ -123,7 +138,8 @@ public class AttendanceServiceImpl implements AttendanceService {
 		attendance.setStudent(rfidCredential.get().getStudent());
 		attendance.setDate(LocalDate.now());
 		Optional<Attendance> latestAttendanceOptional = Attendance
-				.find("date = ?1 AND student.id = ?2", now, rfidCredential.get().getStudent().getId()).firstResultOptional();
+				.find("date = ?1 AND student.id = ?2", now, rfidCredential.get().getStudent().getId())
+				.firstResultOptional();
 
 		// * Now, what we have to do is to calculate the timeIn, timeOut, and status
 		switch (rfidCardDTO.getMode()) {
@@ -180,7 +196,8 @@ public class AttendanceServiceImpl implements AttendanceService {
 
 			case EXCUSED -> {
 				if (latestAttendanceOptional.isEmpty()) {
-					logger.debug("No attendance found, when excusing student, consult to the administrator or teachers.");
+					logger.debug(
+							"No attendance found, when excusing student, consult to the administrator or teachers.");
 					return new MessageDTO(
 							"Consult admin/teachers",
 							CodeStatus.OK);
@@ -196,7 +213,8 @@ public class AttendanceServiceImpl implements AttendanceService {
 				}
 
 				latestAttendance.setNotes("This student was scanned as excused.");
-				latestAttendance.setStatus(getAttendanceStatus(rfidCardDTO.getMode(), rfidCredential.get().getStudent()));
+				latestAttendance
+						.setStatus(getAttendanceStatus(rfidCardDTO.getMode(), rfidCredential.get().getStudent()));
 				latestAttendance.setTimeOut(LocalTime.now());
 				latestAttendance.persist();
 
@@ -273,7 +291,8 @@ public class AttendanceServiceImpl implements AttendanceService {
 				return 0;
 			}
 
-			return Attendance.count("status IN ?1 AND date BETWEEN ?2 AND ?3 AND student.classroom.id = ?4", attendanceStatus,
+			return Attendance.count("status IN ?1 AND date BETWEEN ?2 AND ?3 AND student.classroom.id = ?4",
+					attendanceStatus,
 					dateRange.getStartDate(), dateRange.getEndDate(), id);
 		}
 
@@ -382,8 +401,10 @@ public class AttendanceServiceImpl implements AttendanceService {
 		sort = Sort.by("date", "timeIn", "timeOut").descending();
 		logger.debug("Sorting by date, time in, and time out");
 		if (foreignEntity == AttendanceForeignEntity.STUDENT) {
-			return Attendance.find("status IN ?1 AND date BETWEEN ?2 AND ?3 AND student.id = ?4", sort, attendanceStatus,
-					dateRange.getStartDate(), dateRange.getEndDate(), id).page(page).list();
+			return Attendance
+					.find("status IN ?1 AND date BETWEEN ?2 AND ?3 AND student.id = ?4", sort, attendanceStatus,
+							dateRange.getStartDate(), dateRange.getEndDate(), id)
+					.page(page).list();
 		} else if (foreignEntity == AttendanceForeignEntity.CLASSROOM) {
 			return Attendance.find("status IN ?1 AND date BETWEEN ?2 AND ?3 AND student.classroom.id = ?4", sort,
 					attendanceStatus, dateRange.getStartDate(), dateRange.getEndDate(), id).page(page).list();
@@ -391,6 +412,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
 		return getAllAttendanceByStatusAndDateRange(attendanceStatus, dateRange, page, sort);
 	}
+
 	/**
 	 * Get line chart data
 	 *
@@ -424,7 +446,8 @@ public class AttendanceServiceImpl implements AttendanceService {
 
 			logger.debug("Count total attendance: " + periodRange);
 			long attendances = 0;
-			if (foreignEntity == AttendanceForeignEntity.STUDENT || foreignEntity == AttendanceForeignEntity.CLASSROOM) {
+			if (foreignEntity == AttendanceForeignEntity.STUDENT
+					|| foreignEntity == AttendanceForeignEntity.CLASSROOM) {
 				attendances = countTotalByAttendanceByStatus(statuses, periodRange, id, foreignEntity);
 			}
 			dailyCounts.put(periodRange, dailyCounts.get(periodRange) + Math.toIntExact(attendances));
@@ -531,7 +554,8 @@ public class AttendanceServiceImpl implements AttendanceService {
 		logger.debug("Count total attendance: " + dateRange);
 		if (foreignEntity == AttendanceForeignEntity.STUDENT) {
 			logger.debug("Student: " + foreignEntity);
-			return Attendance.count("status IN ?1 BETWEEN ?2 AND ?3 AND student.id = ?4", statuses, dateRange.getStartDate(),
+			return Attendance.count("status IN ?1 BETWEEN ?2 AND ?3 AND student.id = ?4", statuses,
+					dateRange.getStartDate(),
 					dateRange.getEndDate(), id);
 		} else if (foreignEntity == AttendanceForeignEntity.CLASSROOM) {
 			logger.debug("Classroom: " + foreignEntity);
@@ -597,7 +621,8 @@ public class AttendanceServiceImpl implements AttendanceService {
 	}
 
 	@Override
-	public List<Attendance> getFilteredAttendances(LocalDate date, Integer classroomId, Integer gradeLevelId, Integer strandId, Long studentId, Page page, Sort sort) {
+	public List<Attendance> getFilteredAttendances(LocalDate date, Integer classroomId, Integer gradeLevelId,
+			Integer strandId, Long studentId, Page page, Sort sort) {
 		Map<String, Object> params = new HashMap<>();
 		StringBuilder query = new StringBuilder("date = :date");
 		params.put("date", date);

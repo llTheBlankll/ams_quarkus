@@ -1,15 +1,16 @@
 package com.pshs.ams.models.dto.strand;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
 public class MostPopularStrandDTO {
     private Integer strandId;
     private String strandName;
     private Long studentCount;
-
-    public MostPopularStrandDTO(Integer strandId, String strandName, Long studentCount) {
-        this.strandId = strandId;
-        this.strandName = strandName;
-        this.studentCount = studentCount;
-    }
-
-    // Getters and setters
 }
