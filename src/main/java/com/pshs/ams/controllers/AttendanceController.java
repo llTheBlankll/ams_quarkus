@@ -7,6 +7,7 @@ import org.jboss.logging.Logger;
 import org.modelmapper.ModelMapper;
 
 import com.pshs.ams.models.dto.attendance.AttendanceDTO;
+import com.pshs.ams.models.dto.classroom.ClassroomRankingDTO;
 import com.pshs.ams.models.dto.custom.DateRange;
 import com.pshs.ams.models.dto.custom.LineChartDTO;
 import com.pshs.ams.models.dto.custom.MessageDTO;
@@ -22,6 +23,7 @@ import com.pshs.ams.services.interfaces.AttendanceService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BeanParam;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -224,18 +226,47 @@ public class AttendanceController {
 	}
 
 	@GET
-	@Path("/today")
-	public Response getTodayAttendances(
+	@Path("/filtered")
+	public Response getFilteredAttendances(
 			@QueryParam("classroomId") Integer classroomId,
 			@QueryParam("gradeLevelId") Integer gradeLevelId,
 			@QueryParam("strandId") Integer strandId,
 			@QueryParam("studentId") Long studentId,
+			@BeanParam DateRange dateRange,
 			@BeanParam PageRequest pageRequest,
 			@BeanParam SortRequest sortRequest) {
-		LocalDate today = LocalDate.now();
-		List<Attendance> attendances = attendanceService.getFilteredAttendances(today, classroomId, gradeLevelId,
+		if (dateRange == null || dateRange.getStartDate() == null || dateRange.getEndDate() == null) {
+			dateRange = new DateRange(LocalDate.now(), LocalDate.now());
+		}
+		List<Attendance> attendances = attendanceService.getFilteredAttendances(dateRange, classroomId, gradeLevelId,
 				strandId, studentId, pageRequest.toPage(), sortRequest.toSort());
 		return Response.ok(
 				attendances.stream().map(attendance -> mapper.map(attendance, AttendanceDTO.class)).toList()).build();
+	}
+
+	@GET
+	@Path("/filtered/count")
+	public Response countFilteredAttendances(
+			@QueryParam("classroomId") Integer classroomId,
+			@QueryParam("gradeLevelId") Integer gradeLevelId,
+			@QueryParam("strandId") Integer strandId,
+			@QueryParam("studentId") Long studentId,
+			@BeanParam DateRange dateRange) {
+		if (dateRange == null || dateRange.getStartDate() == null || dateRange.getEndDate() == null) {
+			dateRange = new DateRange(LocalDate.now(), LocalDate.now());
+		}
+		return Response.ok(attendanceService.countFilteredAttendances(dateRange, classroomId, gradeLevelId, strandId, studentId)).build();
+	}
+
+	@GET
+	@Path("/classroom/ranking")
+	public Response getClassroomRanking(
+			@BeanParam DateRange dateRange,
+			@QueryParam("limit") @DefaultValue("5") Integer limit) {
+		if (dateRange == null || dateRange.getStartDate() == null || dateRange.getEndDate() == null) {
+			dateRange = new DateRange(LocalDate.now(), LocalDate.now());
+		}
+		List<ClassroomRankingDTO> rankings = attendanceService.getClassroomRanking(dateRange, limit);
+		return Response.ok(rankings).build();
 	}
 }

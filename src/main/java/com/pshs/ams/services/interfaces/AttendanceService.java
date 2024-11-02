@@ -13,9 +13,9 @@ import com.pshs.ams.models.enums.CodeStatus;
 import com.pshs.ams.models.enums.Sex;
 import com.pshs.ams.models.enums.TimeStack;
 import com.pshs.ams.models.interfaces.AttendanceForeignEntity;
+import com.pshs.ams.models.dto.classroom.ClassroomRankingDTO;
 import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
-import java.time.LocalDate;
 import java.util.List;
 
 public interface AttendanceService {
@@ -138,5 +138,17 @@ public interface AttendanceService {
 	 */
 	long totalStudentAttendance(Long studentId);
 
-	List<Attendance> getFilteredAttendances(LocalDate date, Integer classroomId, Integer gradeLevelId, Integer strandId, Long studentId, Page page, Sort sort);
+	List<Attendance> getFilteredAttendances(DateRange dateRange, Integer classroomId, Integer gradeLevelId,
+			Integer strandId, Long studentId, Page page, Sort sort);
+
+	long countFilteredAttendances(DateRange dateRange, Integer classroomId, Integer gradeLevelId, Integer strandId, Long studentId);
+
+	/**
+	 * Get classroom ranking based on attendance rate
+	 *
+	 * @param dateRange date range to calculate ranking
+	 * @param limit maximum number of classrooms to return
+	 * @return list of classroom rankings
+	 */
+	List<ClassroomRankingDTO> getClassroomRanking(DateRange dateRange, Integer limit);
 }

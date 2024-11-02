@@ -191,13 +191,13 @@ public class StudentServiceImpl implements StudentService {
 	@Override
 	public Optional<MostPopularStrandDTO> getMostPopularStrand() {
 		List<Object[]> result = Strand.find("SELECT s.id, s.name, COUNT(st) as studentCount " +
-				"FROM Strand s LEFT JOIN s.students st " +
+				"FROM Strand s LEFT JOIN Student st ON st.strand = s " +
 				"GROUP BY s.id, s.name " +
 				"ORDER BY studentCount DESC")
 				.project(Object[].class)
 				.page(Page.ofSize(1))
 				.list();
-		
+
 		if (result.isEmpty()) {
 			return Optional.empty();
 		}

@@ -4,12 +4,14 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
 import org.modelmapper.ModelMapper;
@@ -19,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.pshs.ams.models.dto.attendance.AttendanceDTO;
 import com.pshs.ams.models.dto.attendance.ClassroomDemographicsAttendanceDTO;
+import com.pshs.ams.models.dto.classroom.ClassroomRankingDTO;
 import com.pshs.ams.models.dto.custom.DateRange;
 import com.pshs.ams.models.dto.custom.LineChartDTO;
 import com.pshs.ams.models.dto.custom.MessageDTO;
@@ -177,10 +180,12 @@ public class AttendanceServiceImpl implements AttendanceService {
 				// Get Attendance
 				Attendance latestAttendance = latestAttendanceOptional.get();
 				if (latestAttendance.getTimeOut() != null) {
-					logger.debug("Student already has attendance for today correlated to the date and status");
+					logger.debug("Updating time out for student");
+					latestAttendance.setTimeOut(LocalTime.now());
+					latestAttendance.persist();
 					return new MessageDTO(
-							"Already Checked Out",
-							CodeStatus.EXISTS);
+							"Time out updated",
+							CodeStatus.OK);
 				}
 
 				// Update attendance
@@ -621,11 +626,12 @@ public class AttendanceServiceImpl implements AttendanceService {
 	}
 
 	@Override
-	public List<Attendance> getFilteredAttendances(LocalDate date, Integer classroomId, Integer gradeLevelId,
+	public List<Attendance> getFilteredAttendances(DateRange dateRange, Integer classroomId, Integer gradeLevelId,
 			Integer strandId, Long studentId, Page page, Sort sort) {
 		Map<String, Object> params = new HashMap<>();
-		StringBuilder query = new StringBuilder("date = :date");
-		params.put("date", date);
+		StringBuilder query = new StringBuilder("date BETWEEN :startDate AND :endDate");
+		params.put("startDate", dateRange.getStartDate());
+		params.put("endDate", dateRange.getEndDate());
 
 		if (classroomId != null) {
 			query.append(" and student.classroom.id = :classroomId");
@@ -650,4 +656,96 @@ public class AttendanceServiceImpl implements AttendanceService {
 		return Attendance.find(query.toString(), sort, params).page(page).list();
 	}
 
+	@Override
+	public long countFilteredAttendances(DateRange dateRange, Integer classroomId, Integer gradeLevelId, Integer strandId, Long studentId) {
+		Map<String, Object> params = new HashMap<>();
+		StringBuilder query = new StringBuilder("date BETWEEN :startDate AND :endDate");
+		params.put("startDate", dateRange.getStartDate());
+		params.put("endDate", dateRange.getEndDate());
+
+		if (classroomId != null) {
+			query.append(" AND student.classroom.id = :classroomId");
+			params.put("classroomId", classroomId);
+		}
+
+		if (gradeLevelId != null) {
+			query.append(" AND student.gradeLevel.id = :gradeLevelId");
+			params.put("gradeLevelId", gradeLevelId);
+		}
+
+		if (strandId != null) {
+			query.append(" AND student.strand.id = :strandId");
+			params.put("strandId", strandId);
+		}
+
+		if (studentId != null) {
+			query.append(" AND student.id = :studentId");
+			params.put("studentId", studentId);
+		}
+
+		return Attendance.count(query.toString(), params);
+	}
+
+	@Override
+	public List<ClassroomRankingDTO> getClassroomRanking(DateRange dateRange, Integer limit) {
+		logger.error("Classroom Ranking Date range: " + dateRange);
+		// Get all classrooms
+		List<Classroom> classrooms = Classroom.listAll();
+
+		// Create list to store rankings
+		List<ClassroomRankingDTO> rankings = new ArrayList<>();
+
+		// Calculate attendance rate for each classroom
+		for (Classroom classroom : classrooms) {
+			// Get total number of students in classroom
+			long totalStudents = classroom.getStudents().size();
+
+			if (totalStudents > 0) { // Only include classrooms with students
+				// Count total attendance for this classroom in date range
+				long totalAttendance = Attendance.count(
+					"student.classroom.id = ?1 AND date BETWEEN ?2 AND ?3 AND status in ?4",
+					classroom.getId(), dateRange.getStartDate(), dateRange.getEndDate(), Arrays.asList(AttendanceStatus.ON_TIME, AttendanceStatus.LATE)
+				);
+				logger.error("Total attendance: " + totalAttendance);
+
+				// Calculate attendance rate (attendance per student)
+				double attendanceRate = (double) totalAttendance / totalStudents;
+				logger.error("Attendance rate: " + attendanceRate);
+				// Create ranking DTO
+				ClassroomRankingDTO rankingDTO = new ClassroomRankingDTO()
+					.setClassroomId(classroom.getId())
+					.setClassroomName(classroom.getClassroomName())
+					.setRoom(classroom.getRoom())
+					.setTotalAttendance(totalAttendance)
+					.setAttendanceRate(attendanceRate);
+				logger.error("Ranking: " + rankingDTO);
+
+				rankings.add(rankingDTO);
+			}
+		}
+
+		// Sort by attendance rate in descending order
+		rankings.sort((a, b) -> Double.compare(b.getAttendanceRate(), a.getAttendanceRate()));
+
+		// Assign ranks (handle ties by giving same rank)
+		int currentRank = 1;
+		double previousRate = -1;
+
+		for (ClassroomRankingDTO ranking : rankings) {
+			if (ranking.getAttendanceRate() != previousRate) {
+				currentRank = rankings.indexOf(ranking) + 1;
+			}
+			ranking.setRank(currentRank);
+			previousRate = ranking.getAttendanceRate();
+		}
+
+		// Limit results if specified
+		if (limit != null && limit > 0) {
+			return rankings.stream()
+				.limit(limit)
+				.collect(Collectors.toList());
+		}
+		logger.error("Rankings: " + rankings);
+		return rankings;
+	}
 }

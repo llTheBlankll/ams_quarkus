@@ -20,12 +20,12 @@ class DateRangeConfig:
 
 @dataclass
 class AttendanceStatusConfig:
-    statuses = {"ON_TIME": 0.68, "ABSENT": 0.10, "LATE": 0.20, "EXCUSED": 0.02}
+    statuses = {"ON_TIME": 0.73, "ABSENT": 0.05, "LATE": 0.20, "EXCUSED": 0.02}
 
 
 @dataclass
 class BatchConfig:
-    size: int = 1000
+    size: int = 5000
     student_progress_interval: int = 10
 
 
@@ -38,16 +38,16 @@ class DatabaseConfig:
 class GeneratorConfig:
     MOCK_DATA_DIR = "mocks"
     DATA_DIR = "data"
-    DEFAULT_USER_COUNT = 6
-    DEFAULT_TEACHER_COUNT = 6
-    DEFAULT_CLASSROOM_COUNT = 6
-    DEFAULT_GUARDIAN_COUNT = 378
-    DEFAULT_STUDENT_COUNT = 378
+    DEFAULT_USER_COUNT = 8
+    DEFAULT_TEACHER_COUNT = DEFAULT_USER_COUNT
+    DEFAULT_CLASSROOM_COUNT = DEFAULT_TEACHER_COUNT
+    DEFAULT_STUDENT_COUNT = 500
+    DEFAULT_GUARDIAN_COUNT = DEFAULT_STUDENT_COUNT
     DEFAULT_GRADE_LEVELS = 2
-    DEFAULT_STRANDS_COUNT = 5
+    DEFAULT_STRANDS_COUNT = 2
     DEFAULT_STUDENT_SCHEDULES = 2
 
     # Probability configs
-    USER_EXPIRED_CHANCE = 5  # 5%
-    USER_LOCKED_CHANCE = 10  # 10%
-    USER_ENABLED_CHANCE = 90 # 90%
+    USER_EXPIRED_CHANCE = 1  # 1%
+    USER_LOCKED_CHANCE = 5  # 5%
+    USER_ENABLED_CHANCE = 94  # 94%

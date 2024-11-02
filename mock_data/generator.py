@@ -61,11 +61,13 @@ class MockDataGenerator:
             User(
                 username=fake.user_name(),
                 password=bcrypt.using(rounds=12, ident="2y").hash(
-                    fake.password(length=32)
+                    '1234'
                 ),
                 email=fake.unique.email(),
                 profile_picture=fake.image_url(),
-                role=fake.random_element(elements=("GUEST", "ADMIN", "TEACHER")),
+                role=fake.random_element(
+                    elements=[("GUEST", 0.005), ("ADMIN", 0.1), ("TEACHER", 0.845)]
+                ),
                 is_expired=fake.boolean(
                     chance_of_getting_true=GeneratorConfig.USER_EXPIRED_CHANCE
                 ),
@@ -101,14 +103,14 @@ class MockDataGenerator:
             for i in range(count)
         ]
 
-    def generate_classrooms(self, count: int) -> List[Classroom]:
+    def generate_classrooms(self, count: int, grade_levels_count: int) -> List[Classroom]:
         """Generate classroom data"""
         return [
             Classroom(
                 room=f"Building {fake.random_uppercase_letter()}, Room {fake.random_number(3, 3)}",
-                classroom_name=fake.word(),
+                classroom_name=f"{fake.first_name()} {fake.last_name()}",
                 teacher_id=i + 1,
-                grade_level_id=random.choice([1, 2]),
+                grade_level_id=random.randint(1, grade_levels_count),
                 created_at=fake.date_time_this_decade(),
                 updated_at=fake.date_time_this_year(),
             )
@@ -175,7 +177,10 @@ class MockDataGenerator:
         grade_levels = self.generate_grade_levels()
         users = self.generate_users(GeneratorConfig.DEFAULT_USER_COUNT)
         teachers = self.generate_teachers(GeneratorConfig.DEFAULT_TEACHER_COUNT)
-        classrooms = self.generate_classrooms(GeneratorConfig.DEFAULT_CLASSROOM_COUNT)
+        classrooms = self.generate_classrooms(
+            GeneratorConfig.DEFAULT_CLASSROOM_COUNT,
+            GeneratorConfig.DEFAULT_GRADE_LEVELS
+        )
         guardians = self.generate_guardians(GeneratorConfig.DEFAULT_GUARDIAN_COUNT)
         students = self.generate_students(
             GeneratorConfig.DEFAULT_STUDENT_COUNT,
