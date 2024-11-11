@@ -151,4 +151,13 @@ public interface AttendanceService {
 	 * @return list of classroom rankings
 	 */
 	List<ClassroomRankingDTO> getClassroomRanking(DateRange dateRange, Integer limit);
+
+	/**
+	 * Update an attendance record
+	 *
+	 * @param id ID of the attendance record to update
+	 * @param attendanceDTO Updated attendance data
+	 * @return Updated attendance record
+	 */
+	Attendance updateAttendance(Long id, AttendanceDTO attendanceDTO);
 }

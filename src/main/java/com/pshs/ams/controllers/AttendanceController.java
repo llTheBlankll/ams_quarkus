@@ -30,6 +30,8 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.NotFoundException;
 
 @ApplicationScoped
 @Path("/api/v1/attendances")
@@ -79,6 +81,24 @@ public class AttendanceController {
 					.entity(new MessageDTO("Internal Server Error", status))
 					.build();
 		};
+	}
+
+	@PUT
+	@Path("/{id}")
+	public Response updateAttendance(@PathParam("id") Long id, AttendanceDTO attendanceDTO) {
+		try {
+			Attendance updatedAttendance = attendanceService.updateAttendance(id, attendanceDTO);
+			return Response.ok(mapper.map(updatedAttendance, AttendanceDTO.class))
+				.build();
+		} catch (NotFoundException e) {
+			return Response.status(Response.Status.NOT_FOUND)
+				.entity(new MessageDTO(e.getMessage(), CodeStatus.NOT_FOUND))
+				.build();
+		} catch (Exception e) {
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+				.entity(new MessageDTO("Error updating attendance", CodeStatus.FAILED))
+				.build();
+		}
 	}
 
 	@GET

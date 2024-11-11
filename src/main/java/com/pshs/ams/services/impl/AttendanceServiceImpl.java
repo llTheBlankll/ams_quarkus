@@ -47,6 +47,7 @@ import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import jakarta.ws.rs.NotFoundException;
 
 @ApplicationScoped
 public class AttendanceServiceImpl implements AttendanceService {
@@ -747,5 +748,26 @@ public class AttendanceServiceImpl implements AttendanceService {
 		}
 		logger.error("Rankings: " + rankings);
 		return rankings;
+	}
+
+	@Override
+	@Transactional
+	public Attendance updateAttendance(Long id, AttendanceDTO attendanceDTO) {
+		Attendance attendance = Attendance.findById(id);
+		if (attendance == null) {
+			throw new NotFoundException("Attendance record not found");
+		}
+
+		// Update only the allowed fields
+		attendance.setStatus(attendanceDTO.getStatus());
+		attendance.setNotes(attendanceDTO.getNotes());
+		attendance.setTimeIn(attendanceDTO.getTimeIn());
+		attendance.setTimeOut(attendanceDTO.getTimeOut());
+		attendance.setDate(attendanceDTO.getDate());
+
+		// Persist changes
+		attendance.persist();
+
+		return attendance;
 	}
 }
