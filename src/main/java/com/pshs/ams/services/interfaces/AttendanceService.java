@@ -8,6 +8,7 @@ import com.pshs.ams.models.dto.custom.LineChartDTO;
 import com.pshs.ams.models.dto.custom.MessageDTO;
 import com.pshs.ams.models.dto.custom.RFIDCardDTO;
 import com.pshs.ams.models.entities.Attendance;
+import com.pshs.ams.models.entities.Student;
 import com.pshs.ams.models.enums.AttendanceStatus;
 import com.pshs.ams.models.enums.CodeStatus;
 import com.pshs.ams.models.enums.Sex;
@@ -39,7 +40,8 @@ public interface AttendanceService {
 	 * @param dateRange        range of dates to filter by
 	 * @return total count of attendance
 	 */
-	long countTotalByAttendanceByStatus(List<AttendanceStatus> attendanceStatus, DateRange dateRange, Long id, AttendanceForeignEntity foreignEntity);
+	long countTotalByAttendanceByStatus(List<AttendanceStatus> attendanceStatus, DateRange dateRange, Long id,
+			AttendanceForeignEntity foreignEntity);
 
 	// Region: Get All Attendance
 
@@ -50,7 +52,8 @@ public interface AttendanceService {
 	 * @param dateRange        range of dates to filter by
 	 * @return list of {@link AttendanceDTO} objects
 	 */
-	List<Attendance> getAllAttendanceByStatusAndDateRange(List<AttendanceStatus> attendanceStatus, DateRange dateRange, Page page, Sort sort);
+	List<Attendance> getAllAttendanceByStatusAndDateRange(List<AttendanceStatus> attendanceStatus, DateRange dateRange,
+			Page page, Sort sort);
 
 	/**
 	 * Get all attendance by status, date range, and foreign entity
@@ -60,7 +63,8 @@ public interface AttendanceService {
 	 * @param foreignEntity    the foreign entity to filter by
 	 * @return list of {@link AttendanceDTO} objects
 	 */
-	List<Attendance> getAllAttendanceByStatusAndDateRange(List<AttendanceStatus> attendanceStatus, DateRange dateRange, AttendanceForeignEntity foreignEntity, Integer id, Page page, Sort sort);
+	List<Attendance> getAllAttendanceByStatusAndDateRange(List<AttendanceStatus> attendanceStatus, DateRange dateRange,
+			AttendanceForeignEntity foreignEntity, Integer id, Page page, Sort sort);
 
 	/**
 	 * Get line chart data
@@ -71,7 +75,8 @@ public interface AttendanceService {
 	 * @param stack         the time stack to group by
 	 * @return list of {@link LineChartDTO} objects
 	 */
-	LineChartDTO getLineChart(List<AttendanceStatus> statuses, DateRange dateRange, AttendanceForeignEntity foreignEntity, Long id, TimeStack stack);
+	LineChartDTO getLineChart(List<AttendanceStatus> statuses, DateRange dateRange, AttendanceForeignEntity foreignEntity,
+			Long id, TimeStack stack);
 
 	/**
 	 * Get line chart data
@@ -91,7 +96,8 @@ public interface AttendanceService {
 	 * @param id        classroom id
 	 * @return list of {@link ClassroomDemographicsAttendanceDTO} objects
 	 */
-	ClassroomDemographicsAttendanceDTO getClassroomAttendanceDemographicsChart(List<AttendanceStatus> statuses, DateRange dateRange, Long id);
+	ClassroomDemographicsAttendanceDTO getClassroomAttendanceDemographicsChart(List<AttendanceStatus> statuses,
+			DateRange dateRange, Long id);
 
 	/**
 	 * Count total attendance
@@ -102,7 +108,8 @@ public interface AttendanceService {
 	 * @param sexes         list of {@link Sex} to filter by
 	 * @return total count of attendance
 	 */
-	long countAttendances(DateRange dateRange, List<AttendanceStatus> statuses, AttendanceForeignEntity foreignEntity, Integer id, List<Sex> sexes);
+	long countAttendances(DateRange dateRange, List<AttendanceStatus> statuses, AttendanceForeignEntity foreignEntity,
+			Integer id, List<Sex> sexes);
 
 	/**
 	 * Count total attendance
@@ -141,13 +148,14 @@ public interface AttendanceService {
 	List<Attendance> getFilteredAttendances(DateRange dateRange, Integer classroomId, Integer gradeLevelId,
 			Integer strandId, Long studentId, Page page, Sort sort);
 
-	long countFilteredAttendances(DateRange dateRange, Integer classroomId, Integer gradeLevelId, Integer strandId, Long studentId);
+	long countFilteredAttendances(DateRange dateRange, Integer classroomId, Integer gradeLevelId, Integer strandId,
+			Long studentId);
 
 	/**
 	 * Get classroom ranking based on attendance rate
 	 *
 	 * @param dateRange date range to calculate ranking
-	 * @param limit maximum number of classrooms to return
+	 * @param limit     maximum number of classrooms to return
 	 * @return list of classroom rankings
 	 */
 	List<ClassroomRankingDTO> getClassroomRanking(DateRange dateRange, Integer limit);
@@ -155,9 +163,17 @@ public interface AttendanceService {
 	/**
 	 * Update an attendance record
 	 *
-	 * @param id ID of the attendance record to update
+	 * @param id            ID of the attendance record to update
 	 * @param attendanceDTO Updated attendance data
 	 * @return Updated attendance record
 	 */
 	Attendance updateAttendance(Long id, AttendanceDTO attendanceDTO);
+
+	/**
+	 * Get absent students
+	 *
+	 * @param dateRange date range to filter by
+	 * @return list of absent students
+	 */
+	List<Student> getAbsentStudents(DateRange dateRange);
 }

@@ -658,7 +658,8 @@ public class AttendanceServiceImpl implements AttendanceService {
 	}
 
 	@Override
-	public long countFilteredAttendances(DateRange dateRange, Integer classroomId, Integer gradeLevelId, Integer strandId, Long studentId) {
+	public long countFilteredAttendances(DateRange dateRange, Integer classroomId, Integer gradeLevelId, Integer strandId,
+			Long studentId) {
 		Map<String, Object> params = new HashMap<>();
 		StringBuilder query = new StringBuilder("date BETWEEN :startDate AND :endDate");
 		params.put("startDate", dateRange.getStartDate());
@@ -704,9 +705,9 @@ public class AttendanceServiceImpl implements AttendanceService {
 			if (totalStudents > 0) { // Only include classrooms with students
 				// Count total attendance for this classroom in date range
 				long totalAttendance = Attendance.count(
-					"student.classroom.id = ?1 AND date BETWEEN ?2 AND ?3 AND status in ?4",
-					classroom.getId(), dateRange.getStartDate(), dateRange.getEndDate(), Arrays.asList(AttendanceStatus.ON_TIME, AttendanceStatus.LATE)
-				);
+						"student.classroom.id = ?1 AND date BETWEEN ?2 AND ?3 AND status in ?4",
+						classroom.getId(), dateRange.getStartDate(), dateRange.getEndDate(),
+						Arrays.asList(AttendanceStatus.ON_TIME, AttendanceStatus.LATE));
 				logger.error("Total attendance: " + totalAttendance);
 
 				// Calculate attendance rate (attendance per student)
@@ -714,11 +715,11 @@ public class AttendanceServiceImpl implements AttendanceService {
 				logger.error("Attendance rate: " + attendanceRate);
 				// Create ranking DTO
 				ClassroomRankingDTO rankingDTO = new ClassroomRankingDTO()
-					.setClassroomId(classroom.getId())
-					.setClassroomName(classroom.getClassroomName())
-					.setRoom(classroom.getRoom())
-					.setTotalAttendance(totalAttendance)
-					.setAttendanceRate(attendanceRate);
+						.setClassroomId(classroom.getId())
+						.setClassroomName(classroom.getClassroomName())
+						.setRoom(classroom.getRoom())
+						.setTotalAttendance(totalAttendance)
+						.setAttendanceRate(attendanceRate);
 				logger.error("Ranking: " + rankingDTO);
 
 				rankings.add(rankingDTO);
@@ -743,8 +744,8 @@ public class AttendanceServiceImpl implements AttendanceService {
 		// Limit results if specified
 		if (limit != null && limit > 0) {
 			return rankings.stream()
-				.limit(limit)
-				.collect(Collectors.toList());
+					.limit(limit)
+					.collect(Collectors.toList());
 		}
 		logger.error("Rankings: " + rankings);
 		return rankings;
@@ -769,5 +770,26 @@ public class AttendanceServiceImpl implements AttendanceService {
 		attendance.persist();
 
 		return attendance;
+	}
+
+	@Override
+	public List<Student> getAbsentStudents(DateRange dateRange) {
+		logger.debug("Getting absent students for date range: " + dateRange);
+
+		if (dateRange == null || dateRange.getStartDate() == null || dateRange.getEndDate() == null) {
+			logger.error("Invalid date range provided");
+			throw new IllegalArgumentException("Date range cannot be null and must have both start and end dates");
+		}
+
+		// Using a subquery to find students who don't have attendance records in the date range
+		String query = "FROM Student s WHERE NOT EXISTS (" +
+				"SELECT 1 FROM Attendance a " +
+				"WHERE a.student = s " +
+				"AND a.date BETWEEN ?1 AND ?2)";
+
+		return Student.find(query,
+				dateRange.getStartDate(),
+				dateRange.getEndDate())
+				.list();
 	}
 }
