@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.pshs.ams.models.dto.attendance.AttendanceDTO;
 import com.pshs.ams.models.dto.attendance.ClassroomDemographicsAttendanceDTO;
 import com.pshs.ams.models.dto.custom.DateRange;
+import com.pshs.ams.models.dto.custom.DateTimeRange;
 import com.pshs.ams.models.dto.custom.LineChartDTO;
 import com.pshs.ams.models.dto.custom.MessageDTO;
 import com.pshs.ams.models.dto.custom.RFIDCardDTO;
@@ -21,7 +22,7 @@ import java.util.List;
 
 public interface AttendanceService {
 
-	CodeStatus createAttendance(Attendance student, Boolean override);
+	CodeStatus createAttendance(Attendance attendance, Boolean override);
 
 	MessageDTO fromWebSocket(RFIDCardDTO rfidCardDTO) throws JsonProcessingException;
 

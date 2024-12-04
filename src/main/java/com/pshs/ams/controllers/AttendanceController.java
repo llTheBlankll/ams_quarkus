@@ -118,6 +118,7 @@ public class AttendanceController {
 		return Response.ok(count).build();
 	}
 
+
 	@GET
 	@Path("/chart/pie/classroom/{classroomId}/demographics")
 	public Response getClassroomDemographicsChart(@QueryParam("attendanceStatuses") String statuses,

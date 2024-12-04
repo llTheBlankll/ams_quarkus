@@ -38,7 +38,7 @@ public class StrandController {
 	@Path("/create")
 	public Response createStrand(StrandDTO strandDTO) {
 		if (strandDTO == null) {
-			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO("Invalid id", CodeStatus.BAD_REQUEST)).build();
+			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO("Invalid strand content.", CodeStatus.BAD_REQUEST)).build();
 		}
 		Strand strand = mapper.map(strandDTO, Strand.class);
 		CodeStatus status = strandService.createStrand(strand);

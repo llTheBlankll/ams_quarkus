@@ -52,3 +52,12 @@ nb-configuration.xml
 **/*.pyc
 
 uploads
+mock_data/.venv/
+mock_data/mocks
+mock_data/mocks/classrooms.sql
+mock_data/mocks/grade_levels.sql
+mock_data/mocks/guardians.sql
+mock_data/mocks/strands.sql
+mock_data/mocks/students.sql
+mock_data/mocks/teachers.sql
+mock_data/mocks/users.sql

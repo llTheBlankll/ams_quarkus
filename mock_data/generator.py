@@ -208,7 +208,7 @@ class MockDataGenerator:
                 f"is_expired, is_locked, is_enabled, last_login, created_at, updated_at) VALUES "
                 f"('{self.sanitize_sql(u.username)}', '{u.password}', "
                 f"'{self.sanitize_sql(u.email)}', '{self.sanitize_sql(u.profile_picture)}', "
-                f"'{self.sanitize_sql(u.role)}', {u.is_expired}, {u.is_locked}, "
+                f"'{self.sanitize_sql(str(u.role[0]))}', {u.is_expired}, {u.is_locked}, "
                 f"{u.is_enabled}, '{u.last_login}', '{u.created_at}', '{u.updated_at}');\n"
                 for u in users
             ],
