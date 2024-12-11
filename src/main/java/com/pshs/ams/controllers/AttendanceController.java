@@ -89,15 +89,15 @@ public class AttendanceController {
 		try {
 			Attendance updatedAttendance = attendanceService.updateAttendance(id, attendanceDTO);
 			return Response.ok(mapper.map(updatedAttendance, AttendanceDTO.class))
-				.build();
+					.build();
 		} catch (NotFoundException e) {
 			return Response.status(Response.Status.NOT_FOUND)
-				.entity(new MessageDTO(e.getMessage(), CodeStatus.NOT_FOUND))
-				.build();
+					.entity(new MessageDTO(e.getMessage(), CodeStatus.NOT_FOUND))
+					.build();
 		} catch (Exception e) {
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-				.entity(new MessageDTO("Error updating attendance", CodeStatus.FAILED))
-				.build();
+					.entity(new MessageDTO("Error updating attendance", CodeStatus.FAILED))
+					.build();
 		}
 	}
 
@@ -118,6 +118,11 @@ public class AttendanceController {
 		return Response.ok(count).build();
 	}
 
+	@GET
+	@Path("/count/last-hour")
+	public Response getLastHourAttendance(@QueryParam("attendanceStatuses") String attendanceStatuses) {
+		return Response.ok(attendanceService.countLastHourAttendance(UtilService.statusStringToList(attendanceStatuses))).build();
+	}
 
 	@GET
 	@Path("/chart/pie/classroom/{classroomId}/demographics")
@@ -276,7 +281,9 @@ public class AttendanceController {
 		if (dateRange == null || dateRange.getStartDate() == null || dateRange.getEndDate() == null) {
 			dateRange = new DateRange(LocalDate.now(), LocalDate.now());
 		}
-		return Response.ok(attendanceService.countFilteredAttendances(dateRange, classroomId, gradeLevelId, strandId, studentId)).build();
+		return Response
+				.ok(attendanceService.countFilteredAttendances(dateRange, classroomId, gradeLevelId, strandId, studentId))
+				.build();
 	}
 
 	@GET

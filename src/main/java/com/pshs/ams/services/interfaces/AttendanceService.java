@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.pshs.ams.models.dto.attendance.AttendanceDTO;
 import com.pshs.ams.models.dto.attendance.ClassroomDemographicsAttendanceDTO;
 import com.pshs.ams.models.dto.custom.DateRange;
-import com.pshs.ams.models.dto.custom.DateTimeRange;
 import com.pshs.ams.models.dto.custom.LineChartDTO;
 import com.pshs.ams.models.dto.custom.MessageDTO;
 import com.pshs.ams.models.dto.custom.RFIDCardDTO;
@@ -177,4 +176,18 @@ public interface AttendanceService {
 	 * @return list of absent students
 	 */
 	List<Student> getAbsentStudents(DateRange dateRange);
+
+	/**
+	 * Get last hour attendance
+	 *
+	 * @return list of attendance
+	 */
+	List<Student> getLastHourAttendance(List<AttendanceStatus> attendanceStatus) throws IllegalArgumentException;
+
+	/**
+	 * Count last hour attendance
+	 *
+	 * @return total count of attendance
+	 */
+	long countLastHourAttendance(List<AttendanceStatus> attendanceStatuses) throws IllegalArgumentException;
 }

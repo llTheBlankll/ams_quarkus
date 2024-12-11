@@ -1,6 +1,7 @@
 package com.pshs.ams.services.impl;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -23,7 +24,6 @@ import com.pshs.ams.models.dto.attendance.AttendanceDTO;
 import com.pshs.ams.models.dto.attendance.ClassroomDemographicsAttendanceDTO;
 import com.pshs.ams.models.dto.classroom.ClassroomRankingDTO;
 import com.pshs.ams.models.dto.custom.DateRange;
-import com.pshs.ams.models.dto.custom.DateTimeRange;
 import com.pshs.ams.models.dto.custom.LineChartDTO;
 import com.pshs.ams.models.dto.custom.MessageDTO;
 import com.pshs.ams.models.dto.custom.RFIDCardDTO;
@@ -691,7 +691,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
 	@Override
 	public List<ClassroomRankingDTO> getClassroomRanking(DateRange dateRange, Integer limit) {
-		logger.error("Classroom Ranking Date range: " + dateRange);
+		logger.debug("Classroom Ranking Date range: " + dateRange);
 		// Get all classrooms
 		List<Classroom> classrooms = Classroom.listAll();
 
@@ -709,11 +709,11 @@ public class AttendanceServiceImpl implements AttendanceService {
 						"student.classroom.id = ?1 AND date BETWEEN ?2 AND ?3 AND status in ?4",
 						classroom.getId(), dateRange.getStartDate(), dateRange.getEndDate(),
 						Arrays.asList(AttendanceStatus.ON_TIME, AttendanceStatus.LATE));
-				logger.error("Total attendance: " + totalAttendance);
+				logger.debug("Total attendance: " + totalAttendance);
 
 				// Calculate attendance rate (attendance per student)
 				double attendanceRate = (double) totalAttendance / totalStudents;
-				logger.error("Attendance rate: " + attendanceRate);
+				logger.debug("Attendance rate: " + attendanceRate);
 				// Create ranking DTO
 				ClassroomRankingDTO rankingDTO = new ClassroomRankingDTO()
 						.setClassroomId(classroom.getId())
@@ -721,7 +721,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 						.setRoom(classroom.getRoom())
 						.setTotalAttendance(totalAttendance)
 						.setAttendanceRate(attendanceRate);
-				logger.error("Ranking: " + rankingDTO);
+				logger.debug("Ranking: " + rankingDTO);
 
 				rankings.add(rankingDTO);
 			}
@@ -782,7 +782,8 @@ public class AttendanceServiceImpl implements AttendanceService {
 			throw new IllegalArgumentException("Date range cannot be null and must have both start and end dates");
 		}
 
-		// Using a subquery to find students who don't have attendance records in the date range
+		// Using a subquery to find students who don't have attendance records in the
+		// date range
 		String query = "FROM Student s WHERE NOT EXISTS (" +
 				"SELECT 1 FROM Attendance a " +
 				"WHERE a.student = s " +
@@ -794,4 +795,56 @@ public class AttendanceServiceImpl implements AttendanceService {
 				.list();
 	}
 
+	@Override
+	public long countLastHourAttendance(List<AttendanceStatus> attendanceStatuses) throws IllegalArgumentException {
+		if (attendanceStatuses == null || attendanceStatuses.isEmpty()) {
+			throw new IllegalArgumentException("Attendance statuses cannot be null or empty");
+		}
+
+		// Get current time and one hour ago
+		LocalDateTime now = LocalDateTime.now();
+		LocalDateTime oneHourAgo = now.minusHours(1);
+		LocalDate today = now.toLocalDate();
+		LocalTime currentTime = now.toLocalTime();
+		LocalTime hourAgoTime = oneHourAgo.toLocalTime();
+
+		// Count attendance records in the last hour where either timeIn or timeOut
+		// falls within the range, using proper time comparison
+		long total = Attendance.count(
+				"status IN ?1 AND date = ?2 AND " +
+						"((timeIn BETWEEN ?3 AND ?4) OR (timeOut BETWEEN ?3 AND ?4))",
+				attendanceStatuses, today, hourAgoTime, currentTime);
+
+		logger.debug("Total last hour attendance (between " + hourAgoTime + " and " + currentTime + "): " + total);
+		return total;
+	}
+
+	@Override
+	public List<Student> getLastHourAttendance(List<AttendanceStatus> attendanceStatuses)
+			throws IllegalArgumentException {
+		if (attendanceStatuses == null || attendanceStatuses.isEmpty()) {
+			throw new IllegalArgumentException("Attendance statuses cannot be null or empty");
+		}
+
+		// Get current time and one hour ago
+		LocalDateTime now = LocalDateTime.now();
+		LocalDateTime oneHourAgo = now.minusHours(1);
+		LocalDate today = now.toLocalDate();
+		LocalTime currentTime = now.toLocalTime();
+		LocalTime hourAgoTime = oneHourAgo.toLocalTime();
+
+		// Get attendance records in the last hour where either timeIn or timeOut
+		// falls within the range, using proper time comparison
+		List<Attendance> attendances = Attendance.find(
+				"status IN ?1 AND date = ?2 AND " +
+						"((timeIn BETWEEN ?3 AND ?4) OR (timeOut BETWEEN ?3 AND ?4))",
+				attendanceStatuses, today, hourAgoTime, currentTime).list();
+
+		logger.debug("Total last hour attendance (between " + hourAgoTime + " and " + currentTime + "): " + attendances.size());
+
+		// Extract and return the list of students from attendance records
+		return attendances.stream()
+				.map(Attendance::getStudent)
+				.collect(Collectors.toList());
+	}
 }
