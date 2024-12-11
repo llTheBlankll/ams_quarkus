@@ -21,7 +21,7 @@ public class AbsentSchedule {
 	@Inject
 	AttendanceService attendanceService;
 
-	@Scheduled(cron = "0 0 23 * * ?")
+	@Scheduled(cron = "59 59 23 * * ?") // Runs every day at 11:59:59 PM
 	public void checkAbsent() {
 		logger.info("Checking absent students");
 		List<Student> absentStudents =

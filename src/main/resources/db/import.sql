@@ -171,6 +171,16 @@ CREATE TABLE IF NOT EXISTS attendances (
     CONSTRAINT fk_student_lrn FOREIGN KEY (student_id) REFERENCES students (id) ON DELETE SET NULL ON UPDATE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS announcements (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    user_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL ON UPDATE CASCADE
+);
+
 CREATE INDEX attendance_date_idx on attendances (date);
 
 CREATE INDEX attendance_status_idx on attendances (status);
