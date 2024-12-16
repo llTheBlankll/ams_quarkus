@@ -48,8 +48,8 @@ public class AttendanceController {
 	public Response getAllAttendances(@BeanParam PageRequest pageRequest, @BeanParam SortRequest sortRequest) {
 		return Response.ok(
 				Attendance.findAll(sortRequest.toSort()).page(pageRequest.toPage()).stream().map(
-						attendance -> mapper.map(attendance, AttendanceDTO.class)))
-				.build();
+					attendance -> mapper.map(attendance, AttendanceDTO.class)))
+			.build();
 	}
 
 	@POST
@@ -57,8 +57,8 @@ public class AttendanceController {
 	public Response createAttendance(AttendanceDTO attendanceDTO, @QueryParam("override") Boolean override) {
 		if (attendanceDTO == null) {
 			return Response.status(Response.Status.BAD_REQUEST)
-					.entity(new MessageDTO("Input is null", CodeStatus.NULL))
-					.build();
+				.entity(new MessageDTO("Input is null", CodeStatus.NULL))
+				.build();
 		}
 		Attendance attendance = mapper.map(attendanceDTO, Attendance.class);
 		CodeStatus status = attendanceService.createAttendance(attendance, override);
@@ -66,20 +66,20 @@ public class AttendanceController {
 			case OK -> {
 				if (override) {
 					yield Response.status(Response.Status.CREATED)
-							.entity(new MessageDTO("Attendance overridden successfully", status))
-							.build();
+						.entity(new MessageDTO("Attendance overridden successfully", status))
+						.build();
 				} else {
 					yield Response.status(Response.Status.CREATED)
-							.entity(new MessageDTO("Attendance created successfully", status))
-							.build();
+						.entity(new MessageDTO("Attendance created successfully", status))
+						.build();
 				}
 			}
 			case EXISTS -> Response.status(Response.Status.CONFLICT)
-					.entity(new MessageDTO("Attendance already exists", status))
-					.build();
+				.entity(new MessageDTO("Attendance already exists", status))
+				.build();
 			default -> Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-					.entity(new MessageDTO("Internal Server Error", status))
-					.build();
+				.entity(new MessageDTO("Internal Server Error", status))
+				.build();
 		};
 	}
 
@@ -89,30 +89,33 @@ public class AttendanceController {
 		try {
 			Attendance updatedAttendance = attendanceService.updateAttendance(id, attendanceDTO);
 			return Response.ok(mapper.map(updatedAttendance, AttendanceDTO.class))
-					.build();
+				.build();
 		} catch (NotFoundException e) {
 			return Response.status(Response.Status.NOT_FOUND)
-					.entity(new MessageDTO(e.getMessage(), CodeStatus.NOT_FOUND))
-					.build();
+				.entity(new MessageDTO(e.getMessage(), CodeStatus.NOT_FOUND))
+				.build();
 		} catch (Exception e) {
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-					.entity(new MessageDTO("Error updating attendance", CodeStatus.FAILED))
-					.build();
+				.entity(new MessageDTO("Error updating attendance", CodeStatus.FAILED))
+				.build();
 		}
 	}
 
 	@GET
 	@Path("/count/status")
-	public Response countTotalAttendanceByStatus(@QueryParam("attendanceStatuses") String attendanceStatus,
-			@BeanParam DateRange dateRange) {
+	public Response countTotalAttendanceByStatus(
+		@QueryParam("attendanceStatuses") String attendanceStatus,
+		@BeanParam DateRange dateRange
+	) {
 		long count;
 		try {
 			count = attendanceService.countTotalByAttendanceByStatus(
-					UtilService.statusStringToList(attendanceStatus),
-					dateRange);
+				UtilService.statusStringToList(attendanceStatus),
+				dateRange
+			);
 		} catch (Exception e) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO(e.getMessage(), CodeStatus.BAD_REQUEST))
-					.build();
+				.build();
 		}
 
 		return Response.ok(count).build();
@@ -126,47 +129,53 @@ public class AttendanceController {
 
 	@GET
 	@Path("/chart/pie/classroom/{classroomId}/demographics")
-	public Response getClassroomDemographicsChart(@QueryParam("attendanceStatuses") String statuses,
-			@BeanParam DateRange dateRange, @PathParam("classroomId") Long id) {
+	public Response getClassroomDemographicsChart(
+		@QueryParam("attendanceStatuses") String statuses,
+		@BeanParam DateRange dateRange, @PathParam("classroomId") Long id
+	) {
 		if (id <= 0) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(
 					new MessageDTO(
-							"Classroom ID is invalid.",
-							CodeStatus.BAD_REQUEST))
-					.build();
+						"Classroom ID is invalid.",
+						CodeStatus.BAD_REQUEST
+					))
+				.build();
 		}
 
 		try {
 			return Response.ok(
 					attendanceService.getClassroomAttendanceDemographicsChart(
-							UtilService.statusStringToList(statuses),
-							dateRange,
-							id))
-					.build();
+						UtilService.statusStringToList(statuses),
+						dateRange,
+						id
+					))
+				.build();
 		} catch (Exception e) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO(e.getMessage(), CodeStatus.BAD_REQUEST))
-					.build();
+				.build();
 		}
 	}
 
 	@GET
 	@Path("/chart/line")
-	public Response getLineChart(@QueryParam("attendanceStatuses") String statuses, @BeanParam DateRange dateRange,
-			@QueryParam("stack") TimeStack stack, @QueryParam("entity") AttendanceForeignEntity foreignEntity,
-			@QueryParam("id") Long id) {
+	public Response getLineChart(
+		@QueryParam("attendanceStatuses") String statuses, @BeanParam DateRange dateRange,
+		@QueryParam("stack") TimeStack stack, @QueryParam("entity") AttendanceForeignEntity foreignEntity,
+		@QueryParam("id") Long id
+	) {
 		if (dateRange == null || dateRange.getStartDate() == null || dateRange.getEndDate() == null) {
 			return Response.status(Response.Status.BAD_REQUEST)
-					.entity(new MessageDTO("Date range is null or empty", CodeStatus.BAD_REQUEST)).build();
+				.entity(new MessageDTO("Date range is null or empty", CodeStatus.BAD_REQUEST)).build();
 		}
 
 		if (statuses == null || statuses.isEmpty()) {
 			return Response.status(Response.Status.BAD_REQUEST)
-					.entity(new MessageDTO("Attendance statuses is null or empty", CodeStatus.BAD_REQUEST)).build();
+				.entity(new MessageDTO("Attendance statuses is null or empty", CodeStatus.BAD_REQUEST)).build();
 		}
 
 		if (stack == null) {
 			return Response.status(Response.Status.BAD_REQUEST)
-					.entity(new MessageDTO("Time stack is null", CodeStatus.BAD_REQUEST)).build();
+				.entity(new MessageDTO("Time stack is null", CodeStatus.BAD_REQUEST)).build();
 		}
 
 		try {
@@ -176,8 +185,10 @@ public class AttendanceController {
 			LineChartDTO lineChart;
 			if (foreignEntity != null && id != null) {
 				logger.debug("Called getLineChart");
-				lineChart = attendanceService.getLineChart(UtilService.statusStringToList(statuses), dateRange, foreignEntity,
-						id, stack);
+				lineChart = attendanceService.getLineChart(
+					UtilService.statusStringToList(statuses), dateRange, foreignEntity,
+					id, stack
+				);
 			} else {
 				lineChart = attendanceService.getLineChart(UtilService.statusStringToList(statuses), dateRange, stack);
 			}
@@ -189,108 +200,127 @@ public class AttendanceController {
 
 	@GET
 	@Path("/{foreignEntity}/{id}/all/count")
-	public Response countStudentTotalAttendance(@QueryParam("attendanceStatuses") String statuses,
-			@BeanParam DateRange dateRange, @PathParam("id") Long id,
-			@PathParam("foreignEntity") AttendanceForeignEntity foreignEntity) throws Exception {
+	public Response countStudentTotalAttendance(
+		@QueryParam("attendanceStatuses") String statuses,
+		@BeanParam DateRange dateRange, @PathParam("id") Long id,
+		@PathParam("foreignEntity") AttendanceForeignEntity foreignEntity
+	) throws Exception {
 		if (id <= 0) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(
 					new MessageDTO(
-							"Student ID is invalid.",
-							CodeStatus.BAD_REQUEST))
-					.build();
+						"Student ID is invalid.",
+						CodeStatus.BAD_REQUEST
+					))
+				.build();
 		}
 
 		if (foreignEntity == null) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(
 					new MessageDTO(
-							"Foreign entity is null.",
-							CodeStatus.BAD_REQUEST))
-					.build();
+						"Foreign entity is null.",
+						CodeStatus.BAD_REQUEST
+					))
+				.build();
 		}
 
 		if (foreignEntity == AttendanceForeignEntity.CLASSROOM) {
 			return Response.ok(
-					attendanceService.countTotalByAttendanceByStatus(UtilService.statusStringToList(statuses), dateRange, id,
-							AttendanceForeignEntity.CLASSROOM))
-					.build();
+					attendanceService.countTotalByAttendanceByStatus(
+						UtilService.statusStringToList(statuses), dateRange, id,
+						AttendanceForeignEntity.CLASSROOM
+					))
+				.build();
 		} else {
 			return Response.ok(
-					attendanceService.countTotalByAttendanceByStatus(UtilService.statusStringToList(statuses), dateRange, id,
-							AttendanceForeignEntity.STUDENT))
-					.build();
+					attendanceService.countTotalByAttendanceByStatus(
+						UtilService.statusStringToList(statuses), dateRange, id,
+						AttendanceForeignEntity.STUDENT
+					))
+				.build();
 		}
 	}
 
 	@GET
 	@Path("/{foreignEntity}/{id}/all")
-	public Response getForeignEntityAttendances(@QueryParam("attendanceStatuses") String statuses,
-			@BeanParam DateRange dateRange, @PathParam("id") Integer id,
-			@PathParam("foreignEntity") AttendanceForeignEntity foreignEntity, @BeanParam PageRequest pageRequest,
-			@BeanParam SortRequest sortRequest) throws Exception {
+	public Response getForeignEntityAttendances(
+		@QueryParam("attendanceStatuses") String statuses,
+		@BeanParam DateRange dateRange, @PathParam("id") Integer id,
+		@PathParam("foreignEntity") AttendanceForeignEntity foreignEntity, @BeanParam PageRequest pageRequest,
+		@BeanParam SortRequest sortRequest
+	) throws Exception {
 		if (id <= 0) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(
 					new MessageDTO(
-							"Student ID is invalid.",
-							CodeStatus.BAD_REQUEST))
-					.build();
+						"Student ID is invalid.",
+						CodeStatus.BAD_REQUEST
+					))
+				.build();
 		}
 
 		if (foreignEntity == null) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(
 					new MessageDTO(
-							"Foreign entity is null.",
-							CodeStatus.BAD_REQUEST))
-					.build();
+						"Foreign entity is null.",
+						CodeStatus.BAD_REQUEST
+					))
+				.build();
 		}
 
 		return Response.ok(
 				attendanceService
-						.getAllAttendanceByStatusAndDateRange(UtilService.statusStringToList(statuses), dateRange, foreignEntity,
-								id, pageRequest.toPage(), sortRequest.toSort())
-						.stream().map(attendance -> mapper.map(attendance, AttendanceDTO.class)).toList())
-				.build();
+					.getAllAttendanceByStatusAndDateRange(
+						UtilService.statusStringToList(statuses), dateRange, foreignEntity,
+						id, pageRequest.toPage(), sortRequest.toSort()
+					)
+					.stream().map(attendance -> mapper.map(attendance, AttendanceDTO.class)).toList())
+			.build();
 	}
 
 	@GET
 	@Path("/filtered")
 	public Response getFilteredAttendances(
-			@QueryParam("classroomId") Integer classroomId,
-			@QueryParam("gradeLevelId") Integer gradeLevelId,
-			@QueryParam("strandId") Integer strandId,
-			@QueryParam("studentId") Long studentId,
-			@BeanParam DateRange dateRange,
-			@BeanParam PageRequest pageRequest,
-			@BeanParam SortRequest sortRequest) {
+		@QueryParam("classroomId") Integer classroomId,
+		@QueryParam("gradeLevelId") Integer gradeLevelId,
+		@QueryParam("strandId") Integer strandId,
+		@QueryParam("studentId") Long studentId,
+		@BeanParam DateRange dateRange,
+		@BeanParam PageRequest pageRequest,
+		@BeanParam SortRequest sortRequest
+	) {
 		if (dateRange == null || dateRange.getStartDate() == null || dateRange.getEndDate() == null) {
 			dateRange = new DateRange(LocalDate.now(), LocalDate.now());
 		}
-		List<Attendance> attendances = attendanceService.getFilteredAttendances(dateRange, classroomId, gradeLevelId,
-				strandId, studentId, pageRequest.toPage(), sortRequest.toSort());
+		List<Attendance> attendances = attendanceService.getFilteredAttendances(
+			dateRange, classroomId, gradeLevelId,
+			strandId, studentId, pageRequest.toPage(), sortRequest.toSort()
+		);
 		return Response.ok(
-				attendances.stream().map(attendance -> mapper.map(attendance, AttendanceDTO.class)).toList()).build();
+			attendances.stream().map(attendance -> mapper.map(attendance, AttendanceDTO.class)).toList()).build();
 	}
 
 	@GET
 	@Path("/filtered/count")
 	public Response countFilteredAttendances(
-			@QueryParam("classroomId") Integer classroomId,
-			@QueryParam("gradeLevelId") Integer gradeLevelId,
-			@QueryParam("strandId") Integer strandId,
-			@QueryParam("studentId") Long studentId,
-			@BeanParam DateRange dateRange) {
+		@QueryParam("classroomId") Integer classroomId,
+		@QueryParam("gradeLevelId") Integer gradeLevelId,
+		@QueryParam("strandId") Integer strandId,
+		@QueryParam("studentId") Long studentId,
+		@BeanParam DateRange dateRange
+	) {
 		if (dateRange == null || dateRange.getStartDate() == null || dateRange.getEndDate() == null) {
 			dateRange = new DateRange(LocalDate.now(), LocalDate.now());
 		}
 		return Response
-				.ok(attendanceService.countFilteredAttendances(dateRange, classroomId, gradeLevelId, strandId, studentId))
-				.build();
+			.ok(attendanceService.countFilteredAttendances(dateRange, classroomId, gradeLevelId, strandId, studentId))
+			.build();
 	}
 
 	@GET
 	@Path("/classroom/ranking")
 	public Response getClassroomRanking(
-			@BeanParam DateRange dateRange,
-			@QueryParam("limit") @DefaultValue("5") Integer limit) {
+		@BeanParam DateRange dateRange,
+		@QueryParam("limit") @DefaultValue("5") Integer limit
+	) {
 		if (dateRange == null || dateRange.getStartDate() == null || dateRange.getEndDate() == null) {
 			dateRange = new DateRange(LocalDate.now(), LocalDate.now());
 		}
