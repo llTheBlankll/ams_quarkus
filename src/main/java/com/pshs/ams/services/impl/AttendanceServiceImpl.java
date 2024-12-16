@@ -748,7 +748,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 					.limit(limit)
 					.collect(Collectors.toList());
 		}
-		logger.error("Rankings: " + rankings);
+		logger.debug("Rankings: " + rankings);
 		return rankings;
 	}
 
@@ -840,7 +840,8 @@ public class AttendanceServiceImpl implements AttendanceService {
 						"((timeIn BETWEEN ?3 AND ?4) OR (timeOut BETWEEN ?3 AND ?4))",
 				attendanceStatuses, today, hourAgoTime, currentTime).list();
 
-		logger.debug("Total last hour attendance (between " + hourAgoTime + " and " + currentTime + "): " + attendances.size());
+		logger.debug(
+				"Total last hour attendance (between " + hourAgoTime + " and " + currentTime + "): " + attendances.size());
 
 		// Extract and return the list of students from attendance records
 		return attendances.stream()
