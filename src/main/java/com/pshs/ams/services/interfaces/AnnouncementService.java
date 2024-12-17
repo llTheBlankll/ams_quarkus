@@ -32,7 +32,7 @@ public interface AnnouncementService {
 	 * @param announcement the announcement to be deleted
 	 * @return the status of the operation
 	 */
-	CodeStatus deleteAnnouncement(Announcement announcement);
+	CodeStatus deleteAnnouncement(Long id);
 
 	/**
 	 * Retrieve an announcement by id.

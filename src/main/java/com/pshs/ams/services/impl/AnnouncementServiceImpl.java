@@ -65,9 +65,14 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 	 * @return the status of the operation
 	 */
 	@Override
-	public CodeStatus deleteAnnouncement(Announcement announcement) {
-		if (announcement.isPersistent()) {
-			announcement.delete();
+	public CodeStatus deleteAnnouncement(Long id) {
+		if (id == null) {
+			logger.debug("Delete not finished, invalid ID received.");
+			return CodeStatus.BAD_REQUEST;
+		}
+
+		if (isExist(id)) {
+			Announcement.deleteById(id);
 			return CodeStatus.OK;
 		} else {
 			logger.debug("Announcement id is not found.");
