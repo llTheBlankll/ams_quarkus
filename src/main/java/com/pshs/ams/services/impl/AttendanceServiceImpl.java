@@ -93,8 +93,9 @@ public class AttendanceServiceImpl implements AttendanceService {
 			// Check if the student has the same attendance for today correlated to the date
 			// and status
 			Optional<Attendance> existingAttendance = Attendance.find(
-					"student = ?1 and date = ?2 and status = ?3",
-					attendance.getStudent(), attendance.getDate(), attendance.getStatus()).firstResultOptional();
+				"student = ?1 and date = ?2 and status = ?3",
+				attendance.getStudent(), attendance.getDate(), attendance.getStatus()
+			).firstResultOptional();
 
 			if (existingAttendance.isPresent()) {
 				if (!override) {
@@ -125,17 +126,19 @@ public class AttendanceServiceImpl implements AttendanceService {
 		if (rfidCardDTO == null || rfidCardDTO.getHashedLrn() == null || rfidCardDTO.getMode() == null) {
 			logger.debug("RFID Card DTO is null");
 			return new MessageDTO(
-					"RFID Card DTO is null",
-					CodeStatus.NULL);
+				"RFID Card DTO is null",
+				CodeStatus.NULL
+			);
 		}
 
 		Optional<RfidCredential> rfidCredential = RfidCredential.find("hashedLrn = ?1", rfidCardDTO.getHashedLrn())
-				.firstResultOptional();
+			.firstResultOptional();
 		if (rfidCredential.isEmpty()) {
 			logger.debug("RFID Card not found: " + rfidCardDTO.getHashedLrn());
 			return new MessageDTO(
-					"RFID Card not found",
-					CodeStatus.NOT_FOUND);
+				"RFID Card not found",
+				CodeStatus.NOT_FOUND
+			);
 		}
 
 		LocalDate now = LocalDate.now();
@@ -143,8 +146,8 @@ public class AttendanceServiceImpl implements AttendanceService {
 		attendance.setStudent(rfidCredential.get().getStudent());
 		attendance.setDate(LocalDate.now());
 		Optional<Attendance> latestAttendanceOptional = Attendance
-				.find("date = ?1 AND student.id = ?2", now, rfidCredential.get().getStudent().getId())
-				.firstResultOptional();
+			.find("date = ?1 AND student.id = ?2", now, rfidCredential.get().getStudent().getId())
+			.firstResultOptional();
 
 		// * Now, what we have to do is to calculate the timeIn, timeOut, and status
 		switch (rfidCardDTO.getMode()) {
@@ -154,8 +157,9 @@ public class AttendanceServiceImpl implements AttendanceService {
 				if (latestAttendanceOptional.isPresent()) {
 					logger.debug("Student already has attendance for today correlated to the date and status");
 					return new MessageDTO(
-							"Already Checked In",
-							CodeStatus.EXISTS);
+						"Already Checked In",
+						CodeStatus.EXISTS
+					);
 				}
 
 				// Create attendance
@@ -164,10 +168,11 @@ public class AttendanceServiceImpl implements AttendanceService {
 				attendance.setStatus(getAttendanceStatus(rfidCardDTO.getMode(), rfidCredential.get().getStudent()));
 				attendance.persist();
 				realTimeAttendanceService.broadcastMessage(objectMapper.writeValueAsString(
-						modelMapper.map(attendance, AttendanceDTO.class)));
+					modelMapper.map(attendance, AttendanceDTO.class)));
 				return new MessageDTO(
-						"Status: " + attendance.getStatus(),
-						CodeStatus.OK);
+					"Status: " + attendance.getStatus(),
+					CodeStatus.OK
+				);
 			}
 
 			case OUT -> {
@@ -175,8 +180,9 @@ public class AttendanceServiceImpl implements AttendanceService {
 				if (latestAttendanceOptional.isEmpty()) {
 					logger.debug("No attendance found for today");
 					return new MessageDTO(
-							"Not Checked In",
-							CodeStatus.NOT_FOUND);
+						"Not Checked In",
+						CodeStatus.NOT_FOUND
+					);
 				}
 
 				// Get Attendance
@@ -186,8 +192,9 @@ public class AttendanceServiceImpl implements AttendanceService {
 					latestAttendance.setTimeOut(LocalTime.now());
 					latestAttendance.persist();
 					return new MessageDTO(
-							"Time out updated",
-							CodeStatus.OK);
+						"Time out updated",
+						CodeStatus.OK
+					);
 				}
 
 				// Update attendance
@@ -195,19 +202,21 @@ public class AttendanceServiceImpl implements AttendanceService {
 				latestAttendance.setTimeOut(LocalTime.now());
 				latestAttendance.persist();
 				realTimeAttendanceService.broadcastMessage(objectMapper.writeValueAsString(
-						modelMapper.map(latestAttendance, AttendanceDTO.class)));
+					modelMapper.map(latestAttendance, AttendanceDTO.class)));
 				return new MessageDTO(
-						"Status: " + latestAttendance.getStatus(),
-						CodeStatus.OK);
+					"Status: " + latestAttendance.getStatus(),
+					CodeStatus.OK
+				);
 			}
 
 			case EXCUSED -> {
 				if (latestAttendanceOptional.isEmpty()) {
 					logger.debug(
-							"No attendance found, when excusing student, consult to the administrator or teachers.");
+						"No attendance found, when excusing student, consult to the administrator or teachers.");
 					return new MessageDTO(
-							"Consult admin/teachers",
-							CodeStatus.OK);
+						"Consult admin/teachers",
+						CodeStatus.OK
+					);
 				}
 				// Update attendance
 				logger.debug("Updating attendance for student: " + rfidCredential.get().getStudent());
@@ -215,22 +224,24 @@ public class AttendanceServiceImpl implements AttendanceService {
 				if (latestAttendance.getStatus() == AttendanceStatus.EXCUSED) {
 					logger.debug("Student already has excused attendance for today correlated to the date and status");
 					return new MessageDTO(
-							"Already Excused",
-							CodeStatus.EXISTS);
+						"Already Excused",
+						CodeStatus.EXISTS
+					);
 				}
 
 				latestAttendance.setNotes("This student was scanned as excused.");
 				latestAttendance
-						.setStatus(getAttendanceStatus(rfidCardDTO.getMode(), rfidCredential.get().getStudent()));
+					.setStatus(getAttendanceStatus(rfidCardDTO.getMode(), rfidCredential.get().getStudent()));
 				latestAttendance.setTimeOut(LocalTime.now());
 				latestAttendance.persist();
 
 				realTimeAttendanceService.broadcastMessage(
-						objectMapper.writeValueAsString(
-								modelMapper.map(latestAttendance, AttendanceDTO.class)));
+					objectMapper.writeValueAsString(
+						modelMapper.map(latestAttendance, AttendanceDTO.class)));
 				return new MessageDTO(
-						"Status: EXCUSED",
-						CodeStatus.OK);
+					"Status: EXCUSED",
+					CodeStatus.OK
+				);
 			}
 
 			default -> {
@@ -271,8 +282,10 @@ public class AttendanceServiceImpl implements AttendanceService {
 	 * @return total count of attendance
 	 */
 	@Override
-	public long countTotalByAttendanceByStatus(List<AttendanceStatus> attendanceStatus, DateRange dateRange, Long id,
-			AttendanceForeignEntity foreignEntity) {
+	public long countTotalByAttendanceByStatus(
+		List<AttendanceStatus> attendanceStatus, DateRange dateRange, Long id,
+		AttendanceForeignEntity foreignEntity
+	) {
 		if (id <= 0) {
 			throw new Error("Invalid classroom id: " + id);
 		}
@@ -286,25 +299,31 @@ public class AttendanceServiceImpl implements AttendanceService {
 
 		if (foreignEntity == AttendanceForeignEntity.STUDENT) {
 			// Check if exists
-			if (studentService.getStudent(id.longValue()).isEmpty()) {
+			if (studentService.getStudent(id).isEmpty()) {
 				return 0;
 			}
 
-			return Attendance.count("status IN ?1 AND date BETWEEN ?2 AND ?3 AND student.id = ?4", attendanceStatus,
-					dateRange.getStartDate(), dateRange.getEndDate(), id);
+			return Attendance.count(
+				"status IN ?1 AND date BETWEEN ?2 AND ?3 AND student.id = ?4", attendanceStatus,
+				dateRange.getStartDate(), dateRange.getEndDate(), id
+			);
 		} else if (foreignEntity == AttendanceForeignEntity.CLASSROOM) {
 			// Check if exists
 			if (classroomService.getClassroom(id).isEmpty()) {
 				return 0;
 			}
 
-			return Attendance.count("status IN ?1 AND date BETWEEN ?2 AND ?3 AND student.classroom.id = ?4",
-					attendanceStatus,
-					dateRange.getStartDate(), dateRange.getEndDate(), id);
+			return Attendance.count(
+				"status IN ?1 AND date BETWEEN ?2 AND ?3 AND student.classroom.id = ?4",
+				attendanceStatus,
+				dateRange.getStartDate(), dateRange.getEndDate(), id
+			);
 		}
 
-		return Attendance.count("status IN ?1 BETWEEN ?2 AND ?3", attendanceStatus, dateRange.getStartDate(),
-				dateRange.getEndDate());
+		return Attendance.count(
+			"status IN ?1 BETWEEN ?2 AND ?3", attendanceStatus, dateRange.getStartDate(),
+			dateRange.getEndDate()
+		);
 	}
 
 	/**
@@ -316,8 +335,10 @@ public class AttendanceServiceImpl implements AttendanceService {
 	 * @return list of {@link ClassroomDemographicsAttendanceDTO} objects
 	 */
 	@Override
-	public ClassroomDemographicsAttendanceDTO getClassroomAttendanceDemographicsChart(List<AttendanceStatus> statuses,
-			DateRange dateRange, Long id) {
+	public ClassroomDemographicsAttendanceDTO getClassroomAttendanceDemographicsChart(
+		List<AttendanceStatus> statuses,
+		DateRange dateRange, Long id
+	) {
 		if (id <= 0) {
 			logger.debug("Invalid classroom id: " + id);
 			throw new Error("Invalid classroom id: " + id);
@@ -335,11 +356,13 @@ public class AttendanceServiceImpl implements AttendanceService {
 		}
 
 		long male = Attendance.count(
-				"status IN ?1 AND date BETWEEN ?2 AND ?3 AND student.classroom.id = ?4 AND cast(student.sex AS text) = ?5",
-				statuses, dateRange.getStartDate(), dateRange.getEndDate(), id, Sex.MALE.name());
+			"status IN ?1 AND date BETWEEN ?2 AND ?3 AND student.classroom.id = ?4 AND cast(student.sex AS text) = ?5",
+			statuses, dateRange.getStartDate(), dateRange.getEndDate(), id, Sex.MALE.name()
+		);
 		long female = Attendance.count(
-				"status IN ?1 AND date BETWEEN ?2 AND ?3 AND student.classroom.id = ?4 AND cast(student.sex AS text) = ?5",
-				statuses, dateRange.getStartDate(), dateRange.getEndDate(), id, Sex.FEMALE.name());
+			"status IN ?1 AND date BETWEEN ?2 AND ?3 AND student.classroom.id = ?4 AND cast(student.sex AS text) = ?5",
+			statuses, dateRange.getStartDate(), dateRange.getEndDate(), id, Sex.FEMALE.name()
+		);
 		return new ClassroomDemographicsAttendanceDTO(male, female);
 	}
 
@@ -354,8 +377,10 @@ public class AttendanceServiceImpl implements AttendanceService {
 	public long countTotalByAttendanceByStatus(List<AttendanceStatus> attendanceStatus, DateRange dateRange) {
 		logger.debug("Count total attendance by status: " + attendanceStatus);
 		logger.debug("Date Range: " + dateRange);
-		return Attendance.count("status IN ?1 AND date BETWEEN ?2 AND ?3", attendanceStatus, dateRange.getStartDate(),
-				dateRange.getEndDate());
+		return Attendance.count(
+			"status IN ?1 AND date BETWEEN ?2 AND ?3", attendanceStatus, dateRange.getStartDate(),
+			dateRange.getEndDate()
+		);
 	}
 
 	/**
@@ -368,10 +393,14 @@ public class AttendanceServiceImpl implements AttendanceService {
 	 * @return list of {@link AttendanceDTO} objects
 	 */
 	@Override
-	public List<Attendance> getAllAttendanceByStatusAndDateRange(List<AttendanceStatus> attendanceStatus,
-			DateRange dateRange, Page page, Sort sort) {
-		return Attendance.find("status IN ?1 BETWEEN ?2 AND ?3", sort, attendanceStatus, dateRange.getStartDate(),
-				dateRange.getEndDate()).page(page).list();
+	public List<Attendance> getAllAttendanceByStatusAndDateRange(
+		List<AttendanceStatus> attendanceStatus,
+		DateRange dateRange, Page page, Sort sort
+	) {
+		return Attendance.find(
+			"status IN ?1 BETWEEN ?2 AND ?3", sort, attendanceStatus, dateRange.getStartDate(),
+			dateRange.getEndDate()
+		).page(page).list();
 	}
 
 	/**
@@ -385,8 +414,10 @@ public class AttendanceServiceImpl implements AttendanceService {
 	 * @return list of {@link AttendanceDTO} objects
 	 */
 	@Override
-	public List<Attendance> getAllAttendanceByStatusAndDateRange(List<AttendanceStatus> attendanceStatus,
-			DateRange dateRange, AttendanceForeignEntity foreignEntity, Integer id, Page page, Sort sort) {
+	public List<Attendance> getAllAttendanceByStatusAndDateRange(
+		List<AttendanceStatus> attendanceStatus,
+		DateRange dateRange, AttendanceForeignEntity foreignEntity, Integer id, Page page, Sort sort
+	) {
 		// Check if parameters are valid
 		if (attendanceStatus == null || attendanceStatus.isEmpty()) {
 			logger.debug("Invalid attendance status provided");
@@ -409,12 +440,16 @@ public class AttendanceServiceImpl implements AttendanceService {
 		logger.debug("Sorting by date, time in, and time out");
 		if (foreignEntity == AttendanceForeignEntity.STUDENT) {
 			return Attendance
-					.find("status IN ?1 AND date BETWEEN ?2 AND ?3 AND student.id = ?4", sort, attendanceStatus,
-							dateRange.getStartDate(), dateRange.getEndDate(), id)
-					.page(page).list();
+				.find(
+					"status IN ?1 AND date BETWEEN ?2 AND ?3 AND student.id = ?4", sort, attendanceStatus,
+					dateRange.getStartDate(), dateRange.getEndDate(), id
+				)
+				.page(page).list();
 		} else if (foreignEntity == AttendanceForeignEntity.CLASSROOM) {
-			return Attendance.find("status IN ?1 AND date BETWEEN ?2 AND ?3 AND student.classroom.id = ?4", sort,
-					attendanceStatus, dateRange.getStartDate(), dateRange.getEndDate(), id).page(page).list();
+			return Attendance.find(
+				"status IN ?1 AND date BETWEEN ?2 AND ?3 AND student.classroom.id = ?4", sort,
+				attendanceStatus, dateRange.getStartDate(), dateRange.getEndDate(), id
+			).page(page).list();
 		}
 
 		return getAllAttendanceByStatusAndDateRange(attendanceStatus, dateRange, page, sort);
@@ -430,8 +465,10 @@ public class AttendanceServiceImpl implements AttendanceService {
 	 * @return list of {@link LineChartDTO} objects
 	 */
 	@Override
-	public LineChartDTO getLineChart(List<AttendanceStatus> statuses, DateRange dateRange,
-			AttendanceForeignEntity foreignEntity, Long id, TimeStack stack) {
+	public LineChartDTO getLineChart(
+		List<AttendanceStatus> statuses, DateRange dateRange,
+		AttendanceForeignEntity foreignEntity, Long id, TimeStack stack
+	) {
 		logger.debug("Called getLineChart");
 		List<String> labels = new ArrayList<>();
 		List<String> data = new ArrayList<>();
@@ -454,7 +491,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 			logger.debug("Count total attendance: " + periodRange);
 			long attendances = 0;
 			if (foreignEntity == AttendanceForeignEntity.STUDENT
-					|| foreignEntity == AttendanceForeignEntity.CLASSROOM) {
+				|| foreignEntity == AttendanceForeignEntity.CLASSROOM) {
 				attendances = countTotalByAttendanceByStatus(statuses, periodRange, id, foreignEntity);
 			}
 			dailyCounts.put(periodRange, dailyCounts.get(periodRange) + Math.toIntExact(attendances));
@@ -470,17 +507,23 @@ public class AttendanceServiceImpl implements AttendanceService {
 			LocalDate endDate = entry.getKey().getEndDate().minusDays(1); // Subtract one day to show inclusive range
 
 			String label = switch (stack) {
-				case WEEK -> String.format("%s to %s, %s",
-						startDate.format(formatter),
-						endDate.format(formatter),
-						startDate.format(yearFormatter));
-				case MONTH -> String.format("%s to %s, %s",
-						startDate.format(formatter),
-						endDate.format(formatter),
-						startDate.format(yearFormatter));
-				case YEAR -> String.format("%s to %s",
-						startDate.format(yearFormatter),
-						endDate.format(yearFormatter));
+				case WEEK -> String.format(
+					"%s to %s, %s",
+					startDate.format(formatter),
+					endDate.format(formatter),
+					startDate.format(yearFormatter)
+				);
+				case MONTH -> String.format(
+					"%s to %s, %s",
+					startDate.format(formatter),
+					endDate.format(formatter),
+					startDate.format(yearFormatter)
+				);
+				case YEAR -> String.format(
+					"%s to %s",
+					startDate.format(yearFormatter),
+					endDate.format(yearFormatter)
+				);
 				default -> startDate.format(DateTimeFormatter.ofPattern("MMM d, yyyy"));
 			};
 
@@ -556,23 +599,31 @@ public class AttendanceServiceImpl implements AttendanceService {
 	 * @return total count of attendance
 	 */
 	@Override
-	public long countAttendances(DateRange dateRange, List<AttendanceStatus> statuses,
-			AttendanceForeignEntity foreignEntity, Integer id, List<Sex> sexes) {
+	public long countAttendances(
+		DateRange dateRange, List<AttendanceStatus> statuses,
+		AttendanceForeignEntity foreignEntity, Integer id, List<Sex> sexes
+	) {
 		logger.debug("Count total attendance: " + dateRange);
 		if (foreignEntity == AttendanceForeignEntity.STUDENT) {
 			logger.debug("Student: " + foreignEntity);
-			return Attendance.count("status IN ?1 BETWEEN ?2 AND ?3 AND student.id = ?4", statuses,
-					dateRange.getStartDate(),
-					dateRange.getEndDate(), id);
+			return Attendance.count(
+				"status IN ?1 BETWEEN ?2 AND ?3 AND student.id = ?4", statuses,
+				dateRange.getStartDate(),
+				dateRange.getEndDate(), id
+			);
 		} else if (foreignEntity == AttendanceForeignEntity.CLASSROOM) {
 			logger.debug("Classroom: " + foreignEntity);
-			return Attendance.count("status IN ?1 BETWEEN ?2 AND ?3 AND classroom.id = ?4", statuses,
-					dateRange.getStartDate(), dateRange.getEndDate(), id);
+			return Attendance.count(
+				"status IN ?1 BETWEEN ?2 AND ?3 AND classroom.id = ?4", statuses,
+				dateRange.getStartDate(), dateRange.getEndDate(), id
+			);
 		}
 
 		logger.debug("All: " + dateRange);
-		return Attendance.count("status IN ?1 BETWEEN ?2 AND ?3", statuses, dateRange.getStartDate(),
-				dateRange.getEndDate());
+		return Attendance.count(
+			"status IN ?1 BETWEEN ?2 AND ?3", statuses, dateRange.getStartDate(),
+			dateRange.getEndDate()
+		);
 	}
 
 	/**
@@ -586,8 +637,10 @@ public class AttendanceServiceImpl implements AttendanceService {
 	@Override
 	public long countAttendances(DateRange dateRange, List<AttendanceStatus> statuses, List<Sex> sexes) {
 		logger.debug("Count total attendance: " + dateRange);
-		return Attendance.count("status IN ?1 BETWEEN ?2 AND ?3", statuses, dateRange.getStartDate(),
-				dateRange.getEndDate());
+		return Attendance.count(
+			"status IN ?1 BETWEEN ?2 AND ?3", statuses, dateRange.getStartDate(),
+			dateRange.getEndDate()
+		);
 	}
 
 	/**
@@ -628,8 +681,10 @@ public class AttendanceServiceImpl implements AttendanceService {
 	}
 
 	@Override
-	public List<Attendance> getFilteredAttendances(DateRange dateRange, Integer classroomId, Integer gradeLevelId,
-			Integer strandId, Long studentId, Page page, Sort sort) {
+	public List<Attendance> getFilteredAttendances(
+		DateRange dateRange, Integer classroomId, Integer gradeLevelId,
+		Integer strandId, Long studentId, Page page, Sort sort
+	) {
 		Map<String, Object> params = new HashMap<>();
 		StringBuilder query = new StringBuilder("date BETWEEN :startDate AND :endDate");
 		params.put("startDate", dateRange.getStartDate());
@@ -659,8 +714,10 @@ public class AttendanceServiceImpl implements AttendanceService {
 	}
 
 	@Override
-	public long countFilteredAttendances(DateRange dateRange, Integer classroomId, Integer gradeLevelId, Integer strandId,
-			Long studentId) {
+	public long countFilteredAttendances(
+		DateRange dateRange, Integer classroomId, Integer gradeLevelId, Integer strandId,
+		Long studentId
+	) {
 		Map<String, Object> params = new HashMap<>();
 		StringBuilder query = new StringBuilder("date BETWEEN :startDate AND :endDate");
 		params.put("startDate", dateRange.getStartDate());
@@ -706,9 +763,10 @@ public class AttendanceServiceImpl implements AttendanceService {
 			if (totalStudents > 0) { // Only include classrooms with students
 				// Count total attendance for this classroom in date range
 				long totalAttendance = Attendance.count(
-						"student.classroom.id = ?1 AND date BETWEEN ?2 AND ?3 AND status in ?4",
-						classroom.getId(), dateRange.getStartDate(), dateRange.getEndDate(),
-						Arrays.asList(AttendanceStatus.ON_TIME, AttendanceStatus.LATE));
+					"student.classroom.id = ?1 AND date BETWEEN ?2 AND ?3 AND status in ?4",
+					classroom.getId(), dateRange.getStartDate(), dateRange.getEndDate(),
+					Arrays.asList(AttendanceStatus.ON_TIME, AttendanceStatus.LATE)
+				);
 				logger.debug("Total attendance: " + totalAttendance);
 
 				// Calculate attendance rate (attendance per student)
@@ -716,11 +774,11 @@ public class AttendanceServiceImpl implements AttendanceService {
 				logger.debug("Attendance rate: " + attendanceRate);
 				// Create ranking DTO
 				ClassroomRankingDTO rankingDTO = new ClassroomRankingDTO()
-						.setClassroomId(classroom.getId())
-						.setClassroomName(classroom.getClassroomName())
-						.setRoom(classroom.getRoom())
-						.setTotalAttendance(totalAttendance)
-						.setAttendanceRate(attendanceRate);
+					.setClassroomId(classroom.getId())
+					.setClassroomName(classroom.getClassroomName())
+					.setRoom(classroom.getRoom())
+					.setTotalAttendance(totalAttendance)
+					.setAttendanceRate(attendanceRate);
 				logger.debug("Ranking: " + rankingDTO);
 
 				rankings.add(rankingDTO);
@@ -745,8 +803,8 @@ public class AttendanceServiceImpl implements AttendanceService {
 		// Limit results if specified
 		if (limit != null && limit > 0) {
 			return rankings.stream()
-					.limit(limit)
-					.collect(Collectors.toList());
+				.limit(limit)
+				.collect(Collectors.toList());
 		}
 		logger.debug("Rankings: " + rankings);
 		return rankings;
@@ -785,14 +843,16 @@ public class AttendanceServiceImpl implements AttendanceService {
 		// Using a subquery to find students who don't have attendance records in the
 		// date range
 		String query = "FROM Student s WHERE NOT EXISTS (" +
-				"SELECT 1 FROM Attendance a " +
-				"WHERE a.student = s " +
-				"AND a.date BETWEEN ?1 AND ?2)";
+			"SELECT 1 FROM Attendance a " +
+			"WHERE a.student = s " +
+			"AND a.date BETWEEN ?1 AND ?2)";
 
-		return Student.find(query,
+		return Student.find(
+				query,
 				dateRange.getStartDate(),
-				dateRange.getEndDate())
-				.list();
+				dateRange.getEndDate()
+			)
+			.list();
 	}
 
 	@Override
@@ -811,9 +871,10 @@ public class AttendanceServiceImpl implements AttendanceService {
 		// Count attendance records in the last hour where either timeIn or timeOut
 		// falls within the range, using proper time comparison
 		long total = Attendance.count(
-				"status IN ?1 AND date = ?2 AND " +
-						"((timeIn BETWEEN ?3 AND ?4) OR (timeOut BETWEEN ?3 AND ?4))",
-				attendanceStatuses, today, hourAgoTime, currentTime);
+			"status IN ?1 AND date = ?2 AND " +
+				"((timeIn BETWEEN ?3 AND ?4) OR (timeOut BETWEEN ?3 AND ?4))",
+			attendanceStatuses, today, hourAgoTime, currentTime
+		);
 
 		logger.debug("Total last hour attendance (between " + hourAgoTime + " and " + currentTime + "): " + total);
 		return total;
@@ -821,7 +882,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
 	@Override
 	public List<Student> getLastHourAttendance(List<AttendanceStatus> attendanceStatuses)
-			throws IllegalArgumentException {
+		throws IllegalArgumentException {
 		if (attendanceStatuses == null || attendanceStatuses.isEmpty()) {
 			throw new IllegalArgumentException("Attendance statuses cannot be null or empty");
 		}
@@ -836,16 +897,17 @@ public class AttendanceServiceImpl implements AttendanceService {
 		// Get attendance records in the last hour where either timeIn or timeOut
 		// falls within the range, using proper time comparison
 		List<Attendance> attendances = Attendance.find(
-				"status IN ?1 AND date = ?2 AND " +
-						"((timeIn BETWEEN ?3 AND ?4) OR (timeOut BETWEEN ?3 AND ?4))",
-				attendanceStatuses, today, hourAgoTime, currentTime).list();
+			"status IN ?1 AND date = ?2 AND " +
+				"((timeIn BETWEEN ?3 AND ?4) OR (timeOut BETWEEN ?3 AND ?4))",
+			attendanceStatuses, today, hourAgoTime, currentTime
+		).list();
 
 		logger.debug(
-				"Total last hour attendance (between " + hourAgoTime + " and " + currentTime + "): " + attendances.size());
+			"Total last hour attendance (between " + hourAgoTime + " and " + currentTime + "): " + attendances.size());
 
 		// Extract and return the list of students from attendance records
 		return attendances.stream()
-				.map(Attendance::getStudent)
-				.collect(Collectors.toList());
+			.map(Attendance::getStudent)
+			.collect(Collectors.toList());
 	}
 }
