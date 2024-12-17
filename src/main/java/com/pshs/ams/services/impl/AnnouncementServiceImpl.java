@@ -74,6 +74,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 			return CodeStatus.NOT_FOUND;
 		}
 	}
+
 	/**
 	 * Retrieve an announcement by id.
 	 *
@@ -116,6 +117,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 
 		return Announcement.findAll(sort).page(page).list();
 	}
+
 	/**
 	 * Searches for announcements by title with optional pagination and sorting.
 	 *
@@ -143,5 +145,16 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 
 		logger.debug("Search announcements by title: {}", title);
 		return Announcement.find("title LIKE ?1", sort, "%" + title + "%").page(page).list();
+	}
+
+	/**
+	 * Check if announcement exists by ID
+	 *
+	 * @param id Announcement ID in the database.
+	 * @return true or false
+	 */
+	@Override
+	public boolean isExist(Long id) {
+		return Announcement.count("id = ?1", id) > 0;
 	}
 }

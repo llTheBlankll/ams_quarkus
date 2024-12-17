@@ -60,4 +60,12 @@ public interface AnnouncementService {
 	 * @return a list of {@link Announcement}s that match the search criteria
 	 */
 	List<Announcement> searchAnnouncement(String title, Sort sort, Page page);
+
+	/**
+	 * Check if announcement exists by ID
+	 *
+	 * @param id Announcement ID in the database.
+	 * @return true or false
+	 */
+	boolean isExist(Long id);
 }
