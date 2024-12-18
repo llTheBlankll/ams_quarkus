@@ -5,6 +5,8 @@ import java.util.Optional;
 import com.pshs.ams.models.dto.custom.PageRequest;
 import com.pshs.ams.models.dto.custom.SortRequest;
 import jakarta.ws.rs.*;
+
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.modelmapper.ModelMapper;
 
@@ -22,8 +24,7 @@ import jakarta.ws.rs.core.Response;
 @Path("/api/v1/announcements")
 public class AnnouncementRetrieval {
 
-	@Inject
-	Logger logger;
+	Logger logger = LogManager.getLogger(this.getClass());
 
 	@Inject
 	AnnouncementService announcementService;
@@ -32,7 +33,7 @@ public class AnnouncementRetrieval {
 
 	@Path("/{id}")
 	@GET
-	public Response getAnnouncement(@PathParam("id") Long id) {
+	public Response getAnnouncement(@PathParam("id") Integer id) {
 		logger.debug("Get Announcement: {}", id);
 		Optional<Announcement> announcementOptional = announcementService.getAnnouncement(id);
 
