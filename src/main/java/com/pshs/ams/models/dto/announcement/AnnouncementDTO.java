@@ -15,7 +15,7 @@ import java.time.Instant;
  */
 @Value
 public class AnnouncementDTO implements Serializable {
-	Long id;
+	Integer id;
 	@NotNull(message = "The title cannot be null.")
 	@Size(message = "Title should only be less than 255 characters", min = 1, max = 255)
 	@NotEmpty(message = "The title cannot be empty.")

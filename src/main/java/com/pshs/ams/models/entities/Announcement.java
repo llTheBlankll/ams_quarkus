@@ -35,7 +35,7 @@ public class Announcement extends PanacheEntityBase {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id", unique = true, updatable = false)
-	private Long id;
+	private Integer id;
 
 	@Size(max = 255)
 	@NotNull
