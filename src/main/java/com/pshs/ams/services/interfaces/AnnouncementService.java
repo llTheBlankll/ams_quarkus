@@ -24,7 +24,7 @@ public interface AnnouncementService {
 	 * @param announcement the announcement to be updated
 	 * @return the status of the operation
 	 */
-	CodeStatus updateAnnouncement(Announcement announcement, Long id);
+	CodeStatus updateAnnouncement(Announcement announcement, Integer id);
 
 	/**
 	 * Delete an existing announcement. This method will also remove the announcement from all users who have viewed it.
@@ -32,7 +32,7 @@ public interface AnnouncementService {
 	 * @param announcement the announcement to be deleted
 	 * @return the status of the operation
 	 */
-	CodeStatus deleteAnnouncement(Long id);
+	CodeStatus deleteAnnouncement(Integer id);
 
 	/**
 	 * Retrieve an announcement by id.
@@ -40,7 +40,7 @@ public interface AnnouncementService {
 	 * @param id the id of the announcement to be retrieved
 	 * @return an Optional containing the retrieved announcement if found, otherwise an empty Optional
 	 */
-	Optional<Announcement> getAnnouncement(Long id);
+	Optional<Announcement> getAnnouncement(Integer id);
 
 	/**
 	 * Retrieves all {@link Announcement}s sorted and paged according to the given {@link Sort} and {@link Page}.
@@ -67,5 +67,5 @@ public interface AnnouncementService {
 	 * @param id Announcement ID in the database.
 	 * @return true or false
 	 */
-	boolean isExist(Long id);
+	boolean isExist(Integer id);
 }

@@ -1,25 +1,28 @@
 package com.pshs.ams.services.impl;
 
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.pshs.ams.models.entities.Announcement;
 import com.pshs.ams.models.enums.CodeStatus;
 import com.pshs.ams.services.interfaces.AnnouncementService;
+
 import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import org.apache.logging.log4j.Logger;
-
-import java.util.List;
-import java.util.Optional;
 
 @ApplicationScoped
 public class AnnouncementServiceImpl implements AnnouncementService {
 
-	@Inject
-	Logger logger;
+	Logger logger = LogManager.getLogger(this.getClass());
 
 	/**
-	 * Create a new announcement. This method will set the created_at and updated_at fields before persisting the announcement.
+	 * Create a new announcement. This method will set the created_at and updated_at
+	 * fields before persisting the announcement.
 	 *
 	 * @param announcement the announcement to be created
 	 * @return the status of the operation
@@ -36,13 +39,14 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 	}
 
 	/**
-	 * Updates an existing announcement. This method will set the updated_at field before updating the announcement.
+	 * Updates an existing announcement. This method will set the updated_at field
+	 * before updating the announcement.
 	 *
 	 * @param announcement the announcement to be updated
 	 * @return the status of the operation
 	 */
 	@Override
-	public CodeStatus updateAnnouncement(Announcement announcement, Long id) {
+	public CodeStatus updateAnnouncement(Announcement announcement, Integer id) {
 		Optional<Announcement> existingAnnouncement = Announcement.findByIdOptional(id);
 		if (existingAnnouncement.isEmpty()) {
 			logger.debug("Announcement id is not found.");
@@ -52,20 +56,21 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 		Announcement existing = existingAnnouncement.get();
 		existing.setTitle(announcement.getTitle());
 		existing.setContent(announcement.getContent());
-		existing.setUpdatedAt(announcement.getUpdatedAt());
+		existing.setUpdatedAt(Instant.now());
 		existing.persist();
 
 		return CodeStatus.OK;
 	}
 
 	/**
-	 * Delete an existing announcement. This method will also remove the announcement from all users who have viewed it.
+	 * Delete an existing announcement. This method will also remove the
+	 * announcement from all users who have viewed it.
 	 *
 	 * @param announcement the announcement to be deleted
 	 * @return the status of the operation
 	 */
 	@Override
-	public CodeStatus deleteAnnouncement(Long id) {
+	public CodeStatus deleteAnnouncement(Integer id) {
 		if (id == null) {
 			logger.debug("Delete not finished, invalid ID received.");
 			return CodeStatus.BAD_REQUEST;
@@ -84,10 +89,11 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 	 * Retrieve an announcement by id.
 	 *
 	 * @param id the id of the announcement to be retrieved
-	 * @return an Optional containing the retrieved announcement if found, otherwise an empty Optional
+	 * @return an Optional containing the retrieved announcement if found, otherwise
+	 * an empty Optional
 	 */
 	@Override
-	public Optional<Announcement> getAnnouncement(Long id) {
+	public Optional<Announcement> getAnnouncement(Integer id) {
 		if (id == null) {
 			logger.debug("Announcement id is null.");
 			return Optional.empty();
@@ -102,7 +108,8 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 	}
 
 	/**
-	 * Retrieves all {@link Announcement}s sorted and paged according to the given {@link Sort} and {@link Page}.
+	 * Retrieves all {@link Announcement}s sorted and paged according to the given
+	 * {@link Sort} and {@link Page}.
 	 *
 	 * @param sort the {@link Sort} to sort the retrieved {@link Announcement}s
 	 * @param page the {@link Page} to page the retrieved {@link Announcement}s
@@ -159,7 +166,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 	 * @return true or false
 	 */
 	@Override
-	public boolean isExist(Long id) {
+	public boolean isExist(Integer id) {
 		return Announcement.count("id = ?1", id) > 0;
 	}
 }
