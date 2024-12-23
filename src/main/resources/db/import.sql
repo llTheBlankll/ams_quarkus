@@ -146,9 +146,10 @@ CREATE INDEX students_section_id_idx ON students (classroom_id);
 CREATE INDEX students_grade_level_idx ON students (grade_level_id);
 
 -- * RFID CREDENTIALS
-CREATE TABLE IF NOT EXISTS rfid_credentials (
+CREATE TABLE IF NOT EXISTS student_credentials (
     id SERIAL PRIMARY KEY,
     student_id BIGINT NOT NULL UNIQUE,
+    fingerprint_id INT NULL,
     hashed_lrn CHAR(32) NOT NULL,
     salt VARCHAR(16) NOT NULL,
     CHECK (LENGTH(hashed_lrn) = 32),
@@ -156,7 +157,7 @@ CREATE TABLE IF NOT EXISTS rfid_credentials (
     FOREIGN KEY (student_id) REFERENCES students (id) ON DELETE CASCADE
 );
 
-CREATE INDEX rfid_credentials_lrn_idx ON rfid_credentials (student_id);
+CREATE INDEX rfid_credentials_lrn_idx ON student_credentials (student_id);
 
 -- * ATTENDANCE TABLE
 CREATE TABLE IF NOT EXISTS attendances (
@@ -176,8 +177,8 @@ CREATE TABLE IF NOT EXISTS announcements (
     title VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
     user_id INT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT now(),
+    updated_at TIMESTAMP DEFAULT now(),
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL ON UPDATE CASCADE
 );
 
