@@ -41,17 +41,16 @@ public class StrandController {
 			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO("Invalid strand content.", CodeStatus.BAD_REQUEST)).build();
 		}
 		Strand strand = mapper.map(strandDTO, Strand.class);
-		CodeStatus status = strandService.createStrand(strand);
+		Optional<Strand> strandOptional = strandService.createStrand(strand);
 
-		return switch (status) {
-			case OK -> Response.ok(new MessageDTO("Strand created", CodeStatus.OK)).build();
-			case BAD_REQUEST ->
-				Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO("Invalid id", CodeStatus.BAD_REQUEST)).build();
-			case NOT_FOUND ->
-				Response.status(Response.Status.NOT_FOUND).entity(new MessageDTO("Strand not found", CodeStatus.NOT_FOUND)).build();
-			default ->
-				Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new MessageDTO("Internal Server Error", CodeStatus.FAILED)).build();
-		};
+		if (strandOptional.isPresent()) {
+			return Response.ok(mapper.map(strandOptional.get(), StrandDTO.class)).build();
+		}
+
+		return Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO(
+			"Strand was not created.",
+			CodeStatus.BAD_REQUEST
+		)).build();
 	}
 
 	@DELETE
@@ -87,8 +86,8 @@ public class StrandController {
 	}
 
 	@PUT
-	@Path("/update")
-	public Response updateStrand(StrandDTO strandDTO, @QueryParam("id") Integer id) {
+	@Path("/{id}")
+	public Response updateStrand(StrandDTO strandDTO, @PathParam("id") Integer id) {
 		if (strandDTO == null || id <= 0) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO("Invalid id", CodeStatus.BAD_REQUEST)).build();
 		}

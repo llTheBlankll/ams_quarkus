@@ -26,7 +26,7 @@ public interface StrandService {
 	 * @param strand the Strand entity to be created
 	 * @return the status of the creation operation
 	 */
-	CodeStatus createStrand(Strand strand);
+	Optional<Strand> createStrand(Strand strand);
 
 	Optional<Strand> getStrand(Integer id);
 

@@ -60,12 +60,14 @@ public class StudentController {
 	// 		@Parameter(name = "sortDirection", in = ParameterIn.QUERY, schema = @Schema(type = SchemaType.STRING))
 	// })
 	public List<StudentDTO> getAllStudent(
-			@BeanParam SortRequest sortRequest,
-			@BeanParam PageRequest pageRequest) {
+		@BeanParam SortRequest sortRequest,
+		@BeanParam PageRequest pageRequest
+	) {
 		return this.studentService.getAllStudents(
 				Sort.by(sortRequest.sortBy, sortRequest.sortDirection),
-				Page.of(pageRequest.page, pageRequest.size)).stream()
-				.map(student -> this.modelMapper.map(student, StudentDTO.class)).toList();
+				Page.of(pageRequest.page, pageRequest.size)
+			).stream()
+			.map(student -> this.modelMapper.map(student, StudentDTO.class)).toList();
 	}
 
 	@POST
@@ -73,26 +75,31 @@ public class StudentController {
 	public Response createStudent(StudentDTO studentDTO) {
 		if (studentDTO == null) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO(
-					"Student is not provided",
-					CodeStatus.NULL)).build();
+				"Student is not provided",
+				CodeStatus.NULL
+			)).build();
 		}
 
 		Student student = this.modelMapper.map(studentDTO, Student.class);
 		return switch (studentService.createStudent(student)) {
 			case BAD_REQUEST -> Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO(
-					"Invalid student",
-					CodeStatus.BAD_REQUEST)).build();
+				"Invalid student",
+				CodeStatus.BAD_REQUEST
+			)).build();
 			case EXISTS -> Response.ok(new MessageDTO(
-					"Student already exists",
-					CodeStatus.EXISTS)).build();
+				"Student already exists",
+				CodeStatus.EXISTS
+			)).build();
 			case OK -> Response.status(Response.Status.OK).entity(
 					new MessageDTO(
-							"Student created",
-							CodeStatus.OK))
-					.build();
+						"Student created",
+						CodeStatus.OK
+					))
+				.build();
 			default -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new MessageDTO(
-					"Internal server error",
-					CodeStatus.FAILED)).build();
+				"Internal server error",
+				CodeStatus.FAILED
+			)).build();
 		};
 	}
 
@@ -101,17 +108,21 @@ public class StudentController {
 	public Response deleteStudent(@PathParam("id") Long id) {
 		return switch (studentService.deleteStudent(id)) {
 			case OK -> Response.ok(new MessageDTO(
-					"Student deleted",
-					CodeStatus.OK)).build();
+				"Student deleted",
+				CodeStatus.OK
+			)).build();
 			case BAD_REQUEST -> Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO(
-					"Invalid id",
-					CodeStatus.BAD_REQUEST)).build();
+				"Invalid id",
+				CodeStatus.BAD_REQUEST
+			)).build();
 			case NOT_FOUND -> Response.status(Response.Status.NOT_FOUND).entity(new MessageDTO(
-					"Student not found",
-					CodeStatus.NOT_FOUND)).build();
+				"Student not found",
+				CodeStatus.NOT_FOUND
+			)).build();
 			default -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new MessageDTO(
-					"Internal server error",
-					CodeStatus.FAILED)).build();
+				"Internal server error",
+				CodeStatus.FAILED
+			)).build();
 		};
 	}
 
@@ -135,26 +146,31 @@ public class StudentController {
 		Optional<Student> student = studentService.getStudent(id);
 		if (student.isPresent()) {
 			return Response.ok(
-					modelMapper.map(student.get(), StudentDTO.class)).build();
+				modelMapper.map(student.get(), StudentDTO.class)).build();
 		} else {
 			return Response.status(Response.Status.NOT_FOUND).entity(new MessageDTO(
-					"Student not found",
-					CodeStatus.NOT_FOUND)).build();
+				"Student not found",
+				CodeStatus.NOT_FOUND
+			)).build();
 		}
 	}
 
 	@GET
 	@Path("/search/name/{name}")
-	public Response searchStudentByName(@PathParam("name") String name,
-			@BeanParam SortRequest sortRequest,
-			@BeanParam PageRequest pageRequest) {
+	public Response searchStudentByName(
+		@PathParam("name") String name,
+		@BeanParam SortRequest sortRequest,
+		@BeanParam PageRequest pageRequest
+	) {
 		return Response.ok(
-				studentService.searchStudentByName(name,
+				studentService.searchStudentByName(
+						name,
 						Sort.by(sortRequest.sortBy, sortRequest.sortDirection),
-						Page.of(pageRequest.page, pageRequest.size))
-						.stream()
-						.map(student -> modelMapper.map(student, StudentDTO.class)).toList())
-				.build();
+						Page.of(pageRequest.page, pageRequest.size)
+					)
+					.stream()
+					.map(student -> modelMapper.map(student, StudentDTO.class)).toList())
+			.build();
 	}
 
 	@PUT
@@ -162,65 +178,70 @@ public class StudentController {
 	public Response assignClassroomToStudent(@PathParam("id") Long id, @PathParam("classroomId") Long classroomId) {
 		return switch (studentService.assignClassroomToStudent(id, classroomId)) {
 			case OK -> Response.ok(new MessageDTO(
-					"Classroom assigned to student",
-					CodeStatus.OK)).build();
+				"Classroom assigned to student",
+				CodeStatus.OK
+			)).build();
 			case BAD_REQUEST -> Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO(
-					"Invalid id or classroom id",
-					CodeStatus.BAD_REQUEST)).build();
+				"Invalid id or classroom id",
+				CodeStatus.BAD_REQUEST
+			)).build();
 			case NOT_FOUND -> Response.status(Response.Status.NOT_FOUND).entity(new MessageDTO(
-					"Student or classroom not found",
-					CodeStatus.NOT_FOUND)).build();
+				"Student or classroom not found",
+				CodeStatus.NOT_FOUND
+			)).build();
 			default -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new MessageDTO(
-					"Internal server error",
-					CodeStatus.FAILED)).build();
+				"Internal server error",
+				CodeStatus.FAILED
+			)).build();
 		};
 	}
 
-    @GET
-    @Path("/count/strand/{strandId}")
-    @Operation(summary = "Get student count by strand")
-    public Response getStudentCountByStrand(@PathParam("strandId") Long strandId) {
-        long count = studentService.getStudentCountByStrand(strandId);
-        return Response.ok(count).build();
-    }
+	@GET
+	@Path("/count/strand/{strandId}")
+	@Operation(summary = "Get student count by strand")
+	public Response getStudentCountByStrand(@PathParam("strandId") Long strandId) {
+		long count = studentService.getStudentCountByStrand(strandId);
+		return Response.ok(count).build();
+	}
 
-    @GET
-    @Path("/count/grade-level/{gradeLevelId}")
-    @Operation(summary = "Get student count by grade level")
-    public Response getStudentCountByGradeLevel(@PathParam("gradeLevelId") Long gradeLevelId) {
-        long count = studentService.getStudentCountByGradeLevel(gradeLevelId);
-        return Response.ok(count).build();
-    }
+	@GET
+	@Path("/count/grade-level/{gradeLevelId}")
+	@Operation(summary = "Get student count by grade level")
+	public Response getStudentCountByGradeLevel(@PathParam("gradeLevelId") Long gradeLevelId) {
+		long count = studentService.getStudentCountByGradeLevel(gradeLevelId);
+		return Response.ok(count).build();
+	}
 
-    @GET
-    @Path("/most-popular-strand")
-    @Operation(summary = "Get most popular strand")
-    public Response getMostPopularStrand() {
-        Optional<MostPopularStrandDTO> result = studentService.getMostPopularStrand();
-        if (result.isPresent()) {
-            return Response.ok(result.get()).build();
-        }
+	@GET
+	@Path("/most-popular-strand")
+	@Operation(summary = "Get most popular strand")
+	public Response getMostPopularStrand() {
+		Optional<MostPopularStrandDTO> result = studentService.getMostPopularStrand();
+		if (result.isPresent()) {
+			return Response.ok(result.get()).build();
+		}
 
-        return Response.status(Response.Status.NOT_FOUND).build();
-    }
+		return Response.status(Response.Status.NOT_FOUND).build();
+	}
 
-    @GET
-    @Path("/average-per-strand")
-    @Operation(summary = "Get average students per strand")
-    public Response getAverageStudentsPerStrand() {
-        double average = studentService.getAverageStudentsPerStrand();
-        return Response.ok(average).build();
-    }
+	@GET
+	@Path("/average-per-strand")
+	@Operation(summary = "Get average students per strand")
+	public Response getAverageStudentsPerStrand() {
+		double average = studentService.getAverageStudentsPerStrand();
+		return Response.ok(average).build();
+	}
 
-    @GET
-    @Path("/strand-distribution")
-    @Operation(summary = "Get strand distribution")
-    public Response getStrandDistribution(
-            @QueryParam("startDate") String startDateStr,
-            @QueryParam("endDate") String endDateStr) {
-        LocalDate startDate = LocalDate.parse(startDateStr);
-        LocalDate endDate = LocalDate.parse(endDateStr);
-        LineChartDTO chartData = studentService.getStrandDistribution(startDate, endDate);
-        return Response.ok(chartData).build();
-    }
+	@GET
+	@Path("/strand-distribution")
+	@Operation(summary = "Get strand distribution")
+	public Response getStrandDistribution(
+		@QueryParam("startDate") String startDateStr,
+		@QueryParam("endDate") String endDateStr
+	) {
+		LocalDate startDate = LocalDate.parse(startDateStr);
+		LocalDate endDate = LocalDate.parse(endDateStr);
+		LineChartDTO chartData = studentService.getStrandDistribution(startDate, endDate);
+		return Response.ok(chartData).build();
+	}
 }

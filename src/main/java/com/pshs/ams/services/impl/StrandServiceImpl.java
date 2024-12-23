@@ -1,5 +1,6 @@
 package com.pshs.ams.services.impl;
 
+import com.fasterxml.jackson.databind.util.BeanUtil;
 import com.pshs.ams.models.entities.Strand;
 import com.pshs.ams.models.enums.CodeStatus;
 import com.pshs.ams.services.interfaces.StrandService;
@@ -40,25 +41,25 @@ public class StrandServiceImpl implements StrandService {
 	 */
 	@Override
 	@Transactional
-	public CodeStatus createStrand(Strand strand) {
+	public Optional<Strand> createStrand(Strand strand) {
 		if (strand == null) {
 			logger.debug("Strand is null");
-			return CodeStatus.NULL;
+			return Optional.empty();
 		}
 
 		if (strand.getId() != null) {
 			logger.debug("Strand with id " + strand.getId() + " already exists");
-			return CodeStatus.EXISTS;
+			return Optional.empty();
 		}
 
 		if (Strand.find("name", strand.getName()).count() > 0) {
 			logger.debug("Strand with name " + strand.getName() + " already exists");
-			return CodeStatus.EXISTS;
+			return Optional.empty();
 		}
 
 		logger.debug("Create Strand: " + strand);
 		strand.persist();
-		return CodeStatus.OK;
+		return Optional.of(strand);
 	}
 
 	/**
@@ -118,8 +119,11 @@ public class StrandServiceImpl implements StrandService {
 		}
 
 		logger.debug("Update Strand: " + strand);
-		strand.setId(id);
-		strand.persist();
+		Strand updatedStrand = existingStrand.get();
+		updatedStrand.setDescription(strand.getDescription());
+		updatedStrand.setName(strand.getName());
+		updatedStrand.setId(id);
+		updatedStrand.persist();
 		return CodeStatus.OK;
 	}
 }
