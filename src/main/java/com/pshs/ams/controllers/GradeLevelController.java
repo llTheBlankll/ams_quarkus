@@ -64,7 +64,7 @@ public class GradeLevelController {
 				Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO("Grade Level cannot be null", CodeStatus.BAD_REQUEST)).build();
 			case EXISTS -> Response.ok(new MessageDTO("Grade level already exists", CodeStatus.EXISTS)).build();
 			case OK ->
-				Response.status(Response.Status.CREATED).entity(new MessageDTO("Grade level created", CodeStatus.OK)).build();
+				Response.status(Response.Status.OK).entity(new MessageDTO("Grade level created", CodeStatus.OK)).build();
 			default ->
 				Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new MessageDTO("Internal Server Error", CodeStatus.FAILED)).build();
 		};

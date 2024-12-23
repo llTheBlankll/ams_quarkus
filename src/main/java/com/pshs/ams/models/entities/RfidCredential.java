@@ -12,7 +12,7 @@ import org.hibernate.annotations.OnDeleteAction;
 @Getter
 @Setter
 @Entity
-@Table(name = "rfid_credentials")
+@Table(name = "student_credentials")
 public class RfidCredential extends PanacheEntityBase {
 	@Id
 	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "rfid_credentials_id_gen")

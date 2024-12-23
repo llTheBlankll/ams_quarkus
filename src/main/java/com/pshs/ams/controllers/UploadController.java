@@ -66,7 +66,7 @@ public class UploadController {
 	private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
 
 	@ConfigProperty(name = "upload.directory", defaultValue = "uploads")
-	private String UPLOAD_DIRECTORY;
+	String UPLOAD_DIRECTORY;
 
 	private ExecutorService executorService;
 
@@ -150,49 +150,48 @@ public class UploadController {
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	@Transactional
 	public CompletableFuture<Response> uploadTeacherProfilePicture(@PathParam("id") Long id, FileUploadInput fileInput) {
-		return CompletableFuture.supplyAsync(() -> {
-			return QuarkusTransaction.requiringNew().call(() -> {
-				logger.debug("Received upload request for teacher profile picture. Teacher ID: " + id);
+		return CompletableFuture.supplyAsync(() -> QuarkusTransaction.requiringNew().call(() -> {
+			logger.debug("Received upload request for teacher profile picture. Teacher ID: " + id);
 
-				Optional<Teacher> teacherOptional = teacherService.getTeacher(id);
-				if (teacherOptional.isEmpty()) {
-					return createErrorResponse(Response.Status.NOT_FOUND, "Teacher not found", CodeStatus.NOT_FOUND);
-				}
+			Optional<Teacher> teacherOptional = teacherService.getTeacher(id);
+			if (teacherOptional.isEmpty()) {
+				return createErrorResponse(Response.Status.NOT_FOUND, "Teacher not found", CodeStatus.NOT_FOUND);
+			}
 
-				if (fileInput.file == null) {
-					return createErrorResponse(Response.Status.BAD_REQUEST, "No files received", CodeStatus.BAD_REQUEST);
-				}
+			if (fileInput.file == null) {
+				logger.debug("Upload request failed. No file was received.");
+				return createErrorResponse(Response.Status.BAD_REQUEST, "No files received", CodeStatus.BAD_REQUEST);
+			}
 
-				if (!isValidImageFile(fileInput.file.filePath(), fileInput.file.contentType())) {
-					return createErrorResponse(Response.Status.BAD_REQUEST, "Invalid image file", CodeStatus.BAD_REQUEST);
-				}
+			if (!isValidImageFile(fileInput.file.filePath(), fileInput.file.contentType())) {
+				return createErrorResponse(Response.Status.BAD_REQUEST, "Invalid image file", CodeStatus.BAD_REQUEST);
+			}
 
-				try {
-					String secureFileName = generateSecureFileName(fileInput.file.fileName());
-					File dest = new File(UPLOAD_DIRECTORY, secureFileName);
-					saveUploadedFile(fileInput.file, dest);
+			try {
+				String secureFileName = generateSecureFileName(fileInput.file.fileName());
+				File dest = new File(UPLOAD_DIRECTORY, secureFileName);
+				saveUploadedFile(fileInput.file, dest);
 
-					File compressedFile = compressImageIfNeeded(dest, secureFileName);
+				File compressedFile = compressImageIfNeeded(dest, secureFileName);
 
-					Teacher teacher = teacherOptional.get();
-					deleteExistingProfilePicture(teacher);
+				Teacher teacher = teacherOptional.get();
+				deleteExistingProfilePicture(teacher);
 
-					CodeStatus status = teacherService.uploadTeacherProfilePicture(id, compressedFile.toPath());
-					if (status != CodeStatus.OK) {
-						return createErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, "Failed to update teacher profile picture",
-								CodeStatus.FAILED);
-					}
-
-					deleteOriginalFileIfCompressed(dest, compressedFile);
-
-					return Response.ok(new MessageDTO("Teacher profile picture updated successfully", CodeStatus.OK)).build();
-				} catch (IOException e) {
-					logger.error("IO error while processing file", e);
-					return createErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, "IO error while processing file",
+				CodeStatus status = teacherService.uploadTeacherProfilePicture(id, compressedFile.toPath());
+				if (status != CodeStatus.OK) {
+					return createErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, "Failed to update teacher profile picture",
 							CodeStatus.FAILED);
 				}
-			});
-		}, executorService);
+
+				deleteOriginalFileIfCompressed(dest, compressedFile);
+
+				return Response.ok(new MessageDTO("Teacher profile picture updated successfully", CodeStatus.OK)).build();
+			} catch (IOException e) {
+				logger.error("IO error while processing file", e);
+				return createErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, "IO error while processing file",
+						CodeStatus.FAILED);
+			}
+		}), executorService);
 	}
 
 	private String generateSecureFileName(String originalFileName) {

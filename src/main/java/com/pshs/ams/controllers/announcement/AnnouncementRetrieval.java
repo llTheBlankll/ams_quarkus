@@ -1,6 +1,8 @@
 package com.pshs.ams.controllers.announcement;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import com.pshs.ams.models.dto.custom.PageRequest;
 import com.pshs.ams.models.dto.custom.SortRequest;
@@ -65,14 +67,25 @@ public class AnnouncementRetrieval {
 		}
 
 		logger.debug("Search Announcement Query: {}", query);
+		List<AnnouncementDTO> announcementDTOList = announcementService.searchAnnouncement(query, sort.toSort(), page.toPage())
+			.stream()
+			.map(a ->
+				mapper.map(a, AnnouncementDTO.class)
+			).toList();
 		return Response.ok(
-			announcementService.searchAnnouncement(query, sort.toSort(), page.toPage())
+			announcementDTOList
 		).build();
 	}
 
 	@Path("/all")
 	@GET
 	public Response getAllAnnouncements(@BeanParam PageRequest page, @BeanParam SortRequest sort) {
-		return Response.ok(announcementService.getAllAnnouncements(sort.toSort(), page.toPage())).build();
+		return Response.ok(
+			announcementService.getAllAnnouncements(sort.toSort(), page.toPage())
+				.stream()
+				.map(
+					a -> mapper.map(a, AnnouncementDTO.class)
+				).toList()
+		).build();
 	}
 }

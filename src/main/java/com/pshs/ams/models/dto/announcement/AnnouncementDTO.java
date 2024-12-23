@@ -5,6 +5,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.Value;
 
 import java.io.Serializable;
@@ -13,7 +16,9 @@ import java.time.Instant;
 /**
  * DTO for {@link com.pshs.ams.models.entities.Announcement}
  */
-@Value
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class AnnouncementDTO implements Serializable {
 	Integer id;
 	@NotNull(message = "The title cannot be null.")

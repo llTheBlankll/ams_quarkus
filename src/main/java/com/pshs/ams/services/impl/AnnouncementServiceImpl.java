@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
+import jakarta.transaction.Transactional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -28,11 +29,14 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 	 * @return the status of the operation
 	 */
 	@Override
+	@Transactional
 	public CodeStatus createAnnouncement(Announcement announcement) {
 		if (announcement.isPersistent()) {
 			logger.debug("Announcement already exists: {}", announcement.getTitle());
 			return CodeStatus.EXISTS;
 		}
+		announcement.setCreatedAt(Instant.now());
+		announcement.setUpdatedAt(Instant.now());
 
 		announcement.persist();
 		return CodeStatus.OK;
@@ -46,6 +50,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 	 * @return the status of the operation
 	 */
 	@Override
+	@Transactional
 	public CodeStatus updateAnnouncement(Announcement announcement, Integer id) {
 		Optional<Announcement> existingAnnouncement = Announcement.findByIdOptional(id);
 		if (existingAnnouncement.isEmpty()) {
@@ -70,6 +75,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 	 * @return the status of the operation
 	 */
 	@Override
+	@Transactional
 	public CodeStatus deleteAnnouncement(Integer id) {
 		if (id == null) {
 			logger.debug("Delete not finished, invalid ID received.");

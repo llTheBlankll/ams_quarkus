@@ -65,11 +65,11 @@ public class AttendanceController {
 		return switch (status) {
 			case OK -> {
 				if (override) {
-					yield Response.status(Response.Status.CREATED)
+					yield Response.status(Response.Status.OK)
 						.entity(new MessageDTO("Attendance overridden successfully", status))
 						.build();
 				} else {
-					yield Response.status(Response.Status.CREATED)
+					yield Response.status(Response.Status.OK)
 						.entity(new MessageDTO("Attendance created successfully", status))
 						.build();
 				}

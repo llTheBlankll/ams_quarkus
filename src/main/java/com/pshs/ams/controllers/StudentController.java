@@ -85,7 +85,7 @@ public class StudentController {
 			case EXISTS -> Response.ok(new MessageDTO(
 					"Student already exists",
 					CodeStatus.EXISTS)).build();
-			case OK -> Response.status(Response.Status.CREATED).entity(
+			case OK -> Response.status(Response.Status.OK).entity(
 					new MessageDTO(
 							"Student created",
 							CodeStatus.OK))
