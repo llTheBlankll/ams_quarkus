@@ -2,6 +2,7 @@ package com.pshs.ams.models.dto.student;
 
 import com.pshs.ams.models.dto.grade_level.GradeLevelDTO;
 import com.pshs.ams.models.dto.strand.StrandDTO;
+import com.pshs.ams.models.dto.student_schedules.StudentScheduleDTO;
 import com.pshs.ams.models.enums.Sex;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
