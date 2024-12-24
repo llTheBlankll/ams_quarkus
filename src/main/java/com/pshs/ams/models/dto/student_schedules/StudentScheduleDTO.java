@@ -1,4 +1,4 @@
-package com.pshs.ams.models.dto.student;
+package com.pshs.ams.models.dto.student_schedules;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
