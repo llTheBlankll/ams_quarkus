@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.jboss.logging.Logger;
 import org.modelmapper.ModelMapper;
 
 import com.pshs.ams.models.dto.custom.LineChartDTO;
@@ -41,6 +42,8 @@ public class StudentController {
 	@Inject
 	StudentService studentService;
 	private final ModelMapper modelMapper = new ModelMapper();
+	@Inject
+	Logger logger;
 
 	/**
 	 * Retrieves a list of all students with optional pagination and sorting.
@@ -72,6 +75,8 @@ public class StudentController {
 
 	@POST
 	@Path("/create")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
 	public Response createStudent(StudentDTO studentDTO) {
 		if (studentDTO == null) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO(
@@ -79,7 +84,6 @@ public class StudentController {
 				CodeStatus.NULL
 			)).build();
 		}
-
 		Student student = this.modelMapper.map(studentDTO, Student.class);
 		return switch (studentService.createStudent(student)) {
 			case BAD_REQUEST -> Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO(
