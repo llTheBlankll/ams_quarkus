@@ -17,6 +17,7 @@ import java.time.LocalTime;
 @Accessors(chain = true)
 public class StudentScheduleDTO implements Serializable {
 	private Integer id;
+	private String name;
 	private LocalTime onTime;
 	private LocalTime lateTime;
 	private LocalTime absentTime;

@@ -4,6 +4,8 @@ import com.pshs.ams.models.dto.grade_level.GradeLevelDTO;
 import com.pshs.ams.models.dto.strand.StrandDTO;
 import com.pshs.ams.models.dto.student_schedules.StudentScheduleDTO;
 import com.pshs.ams.models.enums.Sex;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -36,12 +38,13 @@ public class StudentDTO implements Serializable {
 	@Size(max = 8)
 	private String prefix;
 	private String address;
+	@Enumerated(EnumType.STRING)
 	private Sex sex;
 	@NotNull
-	private LocalDate birthdate;
+	private LocalDate birthDate;
 	private StudentClassroomDTO classroom;
 	private GradeLevelDTO gradeLevel;
 	private StrandDTO strand;
 	private StudentGuardianDTO guardian;
-	private StudentScheduleDTO studentSchedule;
+	private StudentScheduleDTO schedule;
 }
