@@ -97,6 +97,7 @@ CREATE INDEX guardian_full_name_idx ON guardians (full_name);
 
 CREATE TABLE IF NOT EXISTS student_schedules (
     id SERIAL PRIMARY KEY,
+    name VARCHAR(128) NOT NULL,
     on_time TIME,
     late_time TIME,
     absent_time TIME,
