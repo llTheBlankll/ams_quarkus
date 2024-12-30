@@ -8,6 +8,7 @@ import com.pshs.ams.models.dto.strand.MostPopularStrandDTO;
 import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
 
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -77,6 +78,15 @@ public interface StudentService {
 	 * @param classroomId the id of the classroom to assign to the student
 	 */
 	CodeStatus assignClassroomToStudent(Long id, Long classroomId);
+
+	/**
+	 * Uploads a profile picture for the student with the given id.
+	 *
+	 * @param id the id of the student to upload the profile picture for
+	 * @param path the path to the profile picture
+	 * @return the status of the upload operation
+	 */
+	CodeStatus uploadStudentProfilePicture(Long id, Path path);
 
 	long getStudentCountByStrand(Long strandId);
 

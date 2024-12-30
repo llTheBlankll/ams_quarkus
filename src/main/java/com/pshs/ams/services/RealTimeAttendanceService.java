@@ -14,7 +14,7 @@ public class RealTimeAttendanceService {
 	@Inject
 	Logger logger;
 
-	public Map<String, Session> sessions = new ConcurrentHashMap<>();
+	private final Map<String, Session> sessions = new ConcurrentHashMap<>();
 
 	public void registerSession(Session session) {
 		logger.debug("Registering session: " + session.getId());
@@ -23,7 +23,9 @@ public class RealTimeAttendanceService {
 
 	public void unregisterSession(Session session) {
 		logger.debug("Unregistering session: " + session.getId());
-		sessions.remove(session.getId());
+		if (session.getId() != null) {
+			sessions.remove(session.getId());
+		}
 	}
 
 	public void broadcastMessage(String message) {

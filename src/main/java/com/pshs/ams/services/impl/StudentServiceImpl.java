@@ -12,8 +12,10 @@ import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import org.jboss.logging.Logger;
 
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -51,13 +53,14 @@ public class StudentServiceImpl implements StudentService {
 	 * @return the created Student
 	 */
 	@Override
+	@Transactional
 	public CodeStatus createStudent(Student student) {
 		if (student == null) {
 			logger.debug("Student is null");
 			return CodeStatus.BAD_REQUEST;
 		}
 
-		Optional<Student> existingStudent = Student.find("lrn", student.getId()).firstResultOptional();
+		Optional<Student> existingStudent = Student.find("id", student.getId()).firstResultOptional();
 		if (existingStudent.isPresent()) {
 			logger.debug("Student already exists");
 			return CodeStatus.EXISTS;
@@ -75,6 +78,7 @@ public class StudentServiceImpl implements StudentService {
 	 * @return the status of the delete operation
 	 */
 	@Override
+	@Transactional
 	public CodeStatus deleteStudent(Long id) {
 		if (id <= 0) {
 			logger.debug("Invalid id: " + id);
@@ -170,6 +174,29 @@ public class StudentServiceImpl implements StudentService {
 		student.get().setClassroom(classroom.get());
 		student.get().persist();
 		return CodeStatus.OK;
+	}
+
+	/**
+	 * Uploads a profile picture for the student with the given id.
+	 *
+	 * @param id   the id of the student to upload the profile picture for
+	 * @param path the path to the profile picture
+	 * @return the status of the upload operation
+	 */
+	@Override
+	@Transactional
+	public CodeStatus uploadStudentProfilePicture(Long id, Path path) {
+		Optional<Student> studentOptional = getStudent(id);
+
+		if (studentOptional.isPresent()) {
+			if (Student.update("profilePicture = ?1 WHERE id = ?2", path.toString(), id) > 0) {
+				return CodeStatus.OK;
+			} else {
+				return CodeStatus.FAILED;
+			}
+		}
+
+		return CodeStatus.NOT_FOUND;
 	}
 
 	@Override

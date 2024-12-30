@@ -126,7 +126,7 @@ public class TeacherServiceImpl implements TeacherService {
 		}
 
 		return Teacher.find("firstName LIKE ?1 OR lastName LIKE ?2", sort, "%" + name + "%", "%" + name + "%").page(page)
-				.list();
+			.list();
 	}
 
 	@Override
