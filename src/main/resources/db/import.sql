@@ -151,14 +151,14 @@ CREATE TABLE IF NOT EXISTS student_credentials (
     id SERIAL PRIMARY KEY,
     student_id BIGINT NOT NULL UNIQUE,
     fingerprint_id INT NULL,
-    hashed_lrn CHAR(32) NOT NULL,
+    hashed_lrn CHAR(32) NOT NULL UNIQUE,
     salt VARCHAR(16) NOT NULL,
     CHECK (LENGTH(hashed_lrn) = 32),
     CHECK (LENGTH(salt) = 16),
     FOREIGN KEY (student_id) REFERENCES students (id) ON DELETE CASCADE
 );
 
-CREATE INDEX rfid_credentials_lrn_idx ON student_credentials (student_id);
+CREATE INDEX student_credentials_student_id_idx ON student_credentials (student_id);
 
 -- * ATTENDANCE TABLE
 CREATE TABLE IF NOT EXISTS attendances (
