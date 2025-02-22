@@ -1,5 +1,6 @@
 package com.pshs.ams.app.students.services;
 
+import com.pshs.ams.app.students.exceptions.StudentExistsException;
 import com.pshs.ams.app.students.models.entities.Student;
 import com.pshs.ams.global.models.enums.CodeStatus;
 import com.pshs.ams.global.models.custom.LineChart;
@@ -29,16 +30,19 @@ public interface StudentService {
 	 *
 	 * @param student the Student to create
 	 * @return the created Student
+	 * @throws IllegalArgumentException if the given student is null
+	 * @throws StudentExistsException   if a student with the same id already exists
 	 */
-	CodeStatus createStudent(Student student);
+	Optional<Student> createStudent(Student student) throws IllegalArgumentException, StudentExistsException;
 
 	/**
 	 * Deletes the student with the given id.
 	 *
 	 * @param id the id of the student to delete
-	 * @return the status of the delete operation
+	 * @throws IllegalArgumentException if the given id is null or invalid
+	 * @throws StudentExistsException   if the student does not exist
 	 */
-	CodeStatus deleteStudent(Long id);
+	void deleteStudent(Long id) throws IllegalArgumentException, StudentExistsException;
 
 	/**
 	 * Retrieves the total number of students.
@@ -61,7 +65,7 @@ public interface StudentService {
 	 * @param id the id of the student to retrieve
 	 * @return the retrieved Student
 	 */
-	Optional<Student> getStudent(Long id);
+	Optional<Student> getStudent(Long id) throws IllegalArgumentException;
 
 	/**
 	 * Searches for students by name.
@@ -69,15 +73,18 @@ public interface StudentService {
 	 * @param name the name of the student to search for
 	 * @return a list of Student objects that match the search criteria
 	 */
-	List<Student> searchStudentByName(String name, Sort sort, Page page);
+	List<Student> searchStudentByName(String name, Sort sort, Page page) throws IllegalArgumentException;
 
 	/**
-	 * Assigns a classroom to a student.
+	 * Assigns the student with the given id to the given classroom.
 	 *
-	 * @param id the id of the student to assign the classroom to
-	 * @param classroomId the id of the classroom to assign to the student
+	 * @param id          the id of the student to assign
+	 * @param classroomId the id of the classroom to assign the student to
+	 * @return the status of the assignment operation
+	 * @throws IllegalArgumentException if the given id or classroomId is null or invalid
+	 * @throws StudentExistsException   if the student does not exist
 	 */
-	CodeStatus assignClassroomToStudent(Long id, Long classroomId);
+	CodeStatus assignStudentToClassroom(Long id, Long classroomId) throws IllegalArgumentException, StudentExistsException;
 
 	/**
 	 * Uploads a profile picture for the student with the given id.

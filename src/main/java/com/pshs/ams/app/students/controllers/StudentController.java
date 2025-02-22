@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+import com.pshs.ams.app.students.exceptions.StudentExistsException;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.jboss.logging.Logger;
 import org.modelmapper.ModelMapper;
@@ -85,49 +86,51 @@ public class StudentController {
 			)).build();
 		}
 		Student student = this.modelMapper.map(studentDTO, Student.class);
-		return switch (studentService.createStudent(student)) {
-			case BAD_REQUEST -> Response.status(Response.Status.BAD_REQUEST).entity(new MessageResponse(
-				"Invalid student",
-				CodeStatus.BAD_REQUEST
-			)).build();
-			case EXISTS -> Response.ok(new MessageResponse(
+		try {
+			Optional<Student> studentOptional = studentService.createStudent(student);
+			if (studentOptional.isEmpty()) {
+				return Response.status(Response.Status.BAD_REQUEST).entity(new MessageResponse(
+					"Student already exists",
+					CodeStatus.BAD_REQUEST
+				)).build();
+			}
+
+			return Response.ok(
+				modelMapper.map(studentOptional.get(), StudentDTO.class)
+			).build();
+		} catch (StudentExistsException e) {
+			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageResponse(
 				"Student already exists",
 				CodeStatus.EXISTS
 			)).build();
-			case OK -> Response.status(Response.Status.OK).entity(
-					new MessageResponse(
-						"Student created",
-						CodeStatus.OK
-					))
-				.build();
-			default -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new MessageResponse(
-				"Internal server error",
-				CodeStatus.FAILED
+		} catch (IllegalArgumentException e) {
+			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageResponse(
+				"Invalid data received.",
+				CodeStatus.BAD_REQUEST
 			)).build();
-		};
+		}
 	}
 
 	@DELETE
 	@Path("/{id}")
 	public Response deleteStudent(@PathParam("id") Long id) {
-		return switch (studentService.deleteStudent(id)) {
-			case OK -> Response.ok(new MessageResponse(
+		try {
+			studentService.deleteStudent(id);
+			return Response.ok(new MessageResponse(
 				"Student deleted",
 				CodeStatus.OK
 			)).build();
-			case BAD_REQUEST -> Response.status(Response.Status.BAD_REQUEST).entity(new MessageResponse(
-				"Invalid id",
-				CodeStatus.BAD_REQUEST
-			)).build();
-			case NOT_FOUND -> Response.status(Response.Status.NOT_FOUND).entity(new MessageResponse(
+		} catch (StudentExistsException e) {
+			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageResponse(
 				"Student not found",
 				CodeStatus.NOT_FOUND
 			)).build();
-			default -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new MessageResponse(
-				"Internal server error",
-				CodeStatus.FAILED
+		} catch (IllegalArgumentException e) {
+			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageResponse(
+				"Invalid data received.",
+				CodeStatus.BAD_REQUEST
 			)).build();
-		};
+		}
 	}
 
 	@GET
@@ -178,26 +181,33 @@ public class StudentController {
 	}
 
 	@PUT
-	@Path("/{id}/assign-classroom/{classroomId}")
-	public Response assignClassroomToStudent(@PathParam("id") Long id, @PathParam("classroomId") Long classroomId) {
-		return switch (studentService.assignClassroomToStudent(id, classroomId)) {
-			case OK -> Response.ok(new MessageResponse(
-				"Classroom assigned to student",
-				CodeStatus.OK
-			)).build();
-			case BAD_REQUEST -> Response.status(Response.Status.BAD_REQUEST).entity(new MessageResponse(
-				"Invalid id or classroom id",
-				CodeStatus.BAD_REQUEST
-			)).build();
-			case NOT_FOUND -> Response.status(Response.Status.NOT_FOUND).entity(new MessageResponse(
-				"Student or classroom not found",
+	@Path("/{id}/assign-classroom")
+	public Response assignClassroomToStudent(@PathParam("id") Long id, @QueryParam("classroomId") Long classroomId) {
+		try {
+			return switch (studentService.assignStudentToClassroom(id, classroomId)) {
+				case OK -> Response.ok(new MessageResponse(
+					"Classroom assigned to student",
+					CodeStatus.OK
+				)).build();
+				case BAD_REQUEST -> Response.status(Response.Status.BAD_REQUEST).entity(new MessageResponse(
+					"Invalid id or classroom id",
+					CodeStatus.BAD_REQUEST
+				)).build();
+				case NOT_FOUND -> Response.status(Response.Status.NOT_FOUND).entity(new MessageResponse(
+					"Student or classroom not found",
+					CodeStatus.NOT_FOUND
+				)).build();
+				default -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new MessageResponse(
+					"Internal server error",
+					CodeStatus.FAILED
+				)).build();
+			};
+		} catch (StudentExistsException e) {
+			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageResponse(
+				e.getMessage(),
 				CodeStatus.NOT_FOUND
 			)).build();
-			default -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new MessageResponse(
-				"Internal server error",
-				CodeStatus.FAILED
-			)).build();
-		};
+		}
 	}
 
 	@GET

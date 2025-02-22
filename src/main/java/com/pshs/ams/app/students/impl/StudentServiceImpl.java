@@ -1,6 +1,7 @@
 package com.pshs.ams.app.students.impl;
 
 import com.pshs.ams.app.classrooms.models.entities.Classroom;
+import com.pshs.ams.app.students.exceptions.StudentExistsException;
 import com.pshs.ams.app.students.models.entities.Student;
 import com.pshs.ams.app.strands.models.entities.Strand;
 import com.pshs.ams.global.models.enums.CodeStatus;
@@ -54,46 +55,44 @@ public class StudentServiceImpl implements StudentService {
 	 */
 	@Override
 	@Transactional
-	public CodeStatus createStudent(Student student) {
+	public Optional<Student> createStudent(Student student) throws IllegalArgumentException, StudentExistsException {
 		if (student == null) {
 			logger.debug("Student is null");
-			return CodeStatus.BAD_REQUEST;
+			throw new IllegalArgumentException("Student cannot be null.");
 		}
 
 		Optional<Student> existingStudent = Student.find("id", student.getId()).firstResultOptional();
 		if (existingStudent.isPresent()) {
 			logger.debug("Student already exists");
-			return CodeStatus.EXISTS;
+			throw new StudentExistsException("Student with id " + student.getId() + " already exists.");
 		}
 
 		student.persist();
 		logger.debug("Student created: " + student);
-		return CodeStatus.OK;
+		return Optional.of(student);
 	}
 
 	/**
 	 * Deletes the student with the given id.
 	 *
 	 * @param id the id of the student to delete
-	 * @return the status of the delete operation
 	 */
 	@Override
 	@Transactional
-	public CodeStatus deleteStudent(Long id) {
+	public void deleteStudent(Long id) throws IllegalArgumentException, StudentExistsException {
 		if (id <= 0) {
 			logger.debug("Invalid id: " + id);
-			return CodeStatus.BAD_REQUEST;
+			throw new IllegalArgumentException("Invalid id: " + id);
 		}
 
 		Optional<Student> existingStudent = Student.findByIdOptional(id);
-		if (existingStudent.isPresent()) {
-			existingStudent.get().delete();
-			logger.debug("Student deleted: " + id);
-			return CodeStatus.OK;
+		if (existingStudent.isEmpty()) {
+			logger.debug("Student not found: " + id);
+			throw new StudentExistsException("Student not found: " + id);
 		}
 
-		logger.debug("Student not found: " + id);
-		return CodeStatus.NOT_FOUND;
+		existingStudent.get().delete();
+		logger.debug("Student deleted: " + id);
 	}
 
 	/**
@@ -138,10 +137,10 @@ public class StudentServiceImpl implements StudentService {
 	 * @return the retrieved Student
 	 */
 	@Override
-	public Optional<Student> getStudent(Long id) {
+	public Optional<Student> getStudent(Long id) throws IllegalArgumentException {
 		if (id <= 0) {
 			logger.debug("Invalid id: " + id);
-			return Optional.empty();
+			throw new IllegalArgumentException("Invalid id: " + id);
 		}
 
 		// Return the student
@@ -149,7 +148,7 @@ public class StudentServiceImpl implements StudentService {
 	}
 
 	@Override
-	public CodeStatus assignClassroomToStudent(Long id, Long classroomId) {
+	public CodeStatus assignStudentToClassroom(Long id, Long classroomId) {
 		// Check if exists
 		if (id <= 0 || classroomId <= 0) {
 			logger.debug("Invalid id: " + id + " or classroom id: " + classroomId);
@@ -202,7 +201,7 @@ public class StudentServiceImpl implements StudentService {
 	@Override
 	public List<Student> searchStudentByName(String name, Sort sort, Page page) {
 		return Student.find("firstName LIKE ?1 OR lastName LIKE ?1", Sort.by("lastName"), "%" + name + "%").page(page)
-				.list();
+			.list();
 	}
 
 	@Override
@@ -221,9 +220,9 @@ public class StudentServiceImpl implements StudentService {
 				"FROM Strand s LEFT JOIN Student st ON st.strand = s " +
 				"GROUP BY s.id, s.name " +
 				"ORDER BY studentCount DESC")
-				.project(Object[].class)
-				.page(Page.ofSize(1))
-				.list();
+			.project(Object[].class)
+			.page(Page.ofSize(1))
+			.list();
 
 		if (result.isEmpty()) {
 			return Optional.empty();
@@ -255,16 +254,16 @@ public class StudentServiceImpl implements StudentService {
 				"WHERE st.createdAt BETWEEN ?1 AND ?2 " +
 				"GROUP BY s.name " +
 				"ORDER BY s.name", startDateTime, endDateTime)
-				.project(Object[].class)
-				.list();
+			.project(Object[].class)
+			.list();
 
 		List<String> labels = results.stream()
-				.map(r -> (String) r[0])
-				.collect(Collectors.toList());
+			.map(r -> (String) r[0])
+			.collect(Collectors.toList());
 
 		List<String> data = results.stream()
-				.map(r -> String.valueOf((Long) r[1]))
-				.collect(Collectors.toList());
+			.map(r -> String.valueOf((Long) r[1]))
+			.collect(Collectors.toList());
 
 		return new LineChart(labels, data);
 	}
