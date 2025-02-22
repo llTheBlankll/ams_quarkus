@@ -1,4 +1,4 @@
-package com.pshs.ams.models.dto.custom;
+package com.pshs.ams.global.models.custom;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -11,7 +11,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Accessors(chain = true)
-public class LineChartDTO {
+public class LineChart {
 
 	private List<String> labels;
 	private List<String> data;

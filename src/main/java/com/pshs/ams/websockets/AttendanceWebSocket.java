@@ -7,8 +7,8 @@ import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pshs.ams.models.dto.custom.RFIDCardDTO;
-import com.pshs.ams.services.interfaces.AttendanceService;
+import com.pshs.ams.global.models.custom.RFIDCard;
+import com.pshs.ams.app.attendances.services.AttendanceService;
 
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
@@ -59,7 +59,7 @@ public class AttendanceWebSocket {
 	public void onMessage(String message, Session session) {
 		logger.debug("Received message: " + message + " from session: " + session.getId());
 		try {
-			RFIDCardDTO rfidCard = new ObjectMapper().readValue(message, RFIDCardDTO.class);
+			RFIDCard rfidCard = new ObjectMapper().readValue(message, RFIDCard.class);
 			// Validate
 			if (rfidCard.getMode() == null) {
 				logger.debug("Mode is null");

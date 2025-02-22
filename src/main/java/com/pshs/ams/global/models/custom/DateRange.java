@@ -1,4 +1,4 @@
-package com.pshs.ams.models.dto.custom;
+package com.pshs.ams.global.models.custom;
 
 import jakarta.ws.rs.QueryParam;
 import lombok.AllArgsConstructor;

@@ -1,4 +1,4 @@
-package com.pshs.ams.models.dto.custom;
+package com.pshs.ams.global.models.custom;
 
 import io.smallrye.jwt.auth.principal.DefaultJWTCallerPrincipal;
 import io.smallrye.jwt.auth.principal.DefaultJWTParser;
@@ -14,7 +14,7 @@ import java.util.Set;
 
 @Getter
 @Setter
-public class JWTInformationDTO {
+public class JWTInformation {
 	private String rawToken;
 	private Set<String> audience;
 	private Set<String> groups;
@@ -25,7 +25,7 @@ public class JWTInformationDTO {
 	private Long issuedAtTime;
 	private Long expirationTime;
 
-	public JWTInformationDTO(DefaultJWTCallerPrincipal principal) {
+	public JWTInformation(DefaultJWTCallerPrincipal principal) {
 		this.name = principal.getName();
 		this.issuer = principal.getIssuer();
 		principal.getClaimNames().forEach(name -> {
@@ -42,7 +42,7 @@ public class JWTInformationDTO {
 		this.expirationTime = principal.getExpirationTime();
 	}
 
-	public JWTInformationDTO(String token) throws ParseException {
+	public JWTInformation(String token) throws ParseException {
 		DefaultJWTParser parser = new DefaultJWTParser();
 		JsonWebToken jwtToken = parser.parseOnly(token);
 		this.name = jwtToken.getName();

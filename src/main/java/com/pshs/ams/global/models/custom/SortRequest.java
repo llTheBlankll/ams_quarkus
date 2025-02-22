@@ -1,4 +1,4 @@
-package com.pshs.ams.models.dto.custom;
+package com.pshs.ams.global.models.custom;
 
 import io.quarkus.panache.common.Sort;
 import jakarta.ws.rs.QueryParam;

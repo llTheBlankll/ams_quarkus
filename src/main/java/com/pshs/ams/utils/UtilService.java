@@ -1,6 +1,6 @@
-package com.pshs.ams.services;
+package com.pshs.ams.utils;
 
-import com.pshs.ams.models.enums.AttendanceStatus;
+import com.pshs.ams.app.attendances.models.enums.AttendanceStatus;
 
 import java.util.Arrays;
 import java.util.List;

@@ -1,6 +1,6 @@
 package com.pshs.ams.websockets;
 
-import com.pshs.ams.services.RealTimeAttendanceService;
+import com.pshs.ams.app.attendances.impl.RealTimeAttendanceService;
 import jakarta.inject.Inject;
 import jakarta.websocket.OnClose;
 import jakarta.websocket.OnError;

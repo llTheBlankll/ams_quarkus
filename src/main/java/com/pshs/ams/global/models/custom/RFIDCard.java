@@ -1,6 +1,6 @@
-package com.pshs.ams.models.dto.custom;
+package com.pshs.ams.global.models.custom;
 
-import com.pshs.ams.models.enums.AttendanceMode;
+import com.pshs.ams.app.attendances.models.enums.AttendanceMode;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class RFIDCardDTO {
+public class RFIDCard {
 	private String hashedLrn;
 	private AttendanceMode mode;
 }

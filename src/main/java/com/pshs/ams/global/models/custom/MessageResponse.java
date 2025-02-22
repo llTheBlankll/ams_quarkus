@@ -1,6 +1,6 @@
-package com.pshs.ams.models.dto.custom;
+package com.pshs.ams.global.models.custom;
 
-import com.pshs.ams.models.enums.CodeStatus;
+import com.pshs.ams.global.models.enums.CodeStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class MessageDTO {
+public class MessageResponse {
 
 	private String message;
 	private CodeStatus status;
