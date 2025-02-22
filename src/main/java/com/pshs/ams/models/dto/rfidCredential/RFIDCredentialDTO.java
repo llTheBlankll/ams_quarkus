@@ -10,9 +10,6 @@ import lombok.experimental.Accessors;
 
 import java.io.Serializable;
 
-/**
- * DTO for {@link com.pshs.ams.models.entities.RfidCredential}
- */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor

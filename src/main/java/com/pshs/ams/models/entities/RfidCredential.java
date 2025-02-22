@@ -31,6 +31,9 @@ public class RfidCredential extends PanacheEntityBase {
 	@Column(name = "hashed_lrn", nullable = false, length = 32, columnDefinition = "bpchar")
 	private String hashedLrn;
 
+	@Column(name = "fingerprint_id")
+	private Integer fingerprintId;
+
 	@Size(max = 16)
 	@NotNull
 	@Column(name = "salt", nullable = false, length = 16)

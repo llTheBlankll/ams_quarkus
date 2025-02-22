@@ -1,5 +1,6 @@
 package com.pshs.ams.models.entities;
 
+import com.pshs.ams.models.dto.attendance.AttendanceDTO;
 import com.pshs.ams.models.enums.AttendanceStatus;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
@@ -49,4 +50,15 @@ public class Attendance extends PanacheEntityBase {
 	@OnDelete(action = OnDeleteAction.SET_NULL)
 	@JoinColumn(name = "student_id")
 	private Student student;
+
+	public AttendanceDTO toDTO() {
+		AttendanceDTO dto = new AttendanceDTO();
+		dto.setId(id);
+		dto.setStatus(status);
+		dto.setDate(date);
+		dto.setTimeIn(timeIn);
+		dto.setTimeOut(timeOut);
+		dto.setNotes(notes);
+		return dto;
+	}
 }

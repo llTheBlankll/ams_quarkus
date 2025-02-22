@@ -20,7 +20,7 @@ public class StudentSchedule extends PanacheEntityBase {
 	@Column(name = "id", nullable = false)
 	private Integer id;
 
-	@Column(name = "name")
+	@Column(name = "name", length = 128)
 	private String name;
 
 	@Column(name = "on_time")

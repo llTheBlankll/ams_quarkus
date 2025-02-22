@@ -9,7 +9,7 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 @AllArgsConstructor
 @NoArgsConstructor
-public class SearchTeacherQuery {
+public class SearchTeacherInput {
 
 	private String firstName;
 	private String lastName;
