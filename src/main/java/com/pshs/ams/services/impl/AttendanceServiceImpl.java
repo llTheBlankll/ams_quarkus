@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+import com.pshs.ams.models.entities.*;
 import org.jboss.logging.Logger;
 import org.modelmapper.ModelMapper;
 
@@ -27,11 +28,6 @@ import com.pshs.ams.models.dto.custom.DateRange;
 import com.pshs.ams.models.dto.custom.LineChartDTO;
 import com.pshs.ams.models.dto.custom.MessageDTO;
 import com.pshs.ams.models.dto.custom.RFIDCardDTO;
-import com.pshs.ams.models.entities.Attendance;
-import com.pshs.ams.models.entities.Classroom;
-import com.pshs.ams.models.entities.RfidCredential;
-import com.pshs.ams.models.entities.Student;
-import com.pshs.ams.models.entities.StudentSchedule;
 import com.pshs.ams.models.enums.AttendanceMode;
 import com.pshs.ams.models.enums.AttendanceStatus;
 import com.pshs.ams.models.enums.CodeStatus;
@@ -157,7 +153,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 				if (latestAttendanceOptional.isPresent()) {
 					logger.debug("Student already has attendance for today correlated to the date and status");
 					return new MessageDTO(
-						"Already Checked In",
+						"Hi " + rfidCredential.get().getStudent().getLastName() + ", welcome! :D",
 						CodeStatus.EXISTS
 					);
 				}
@@ -170,7 +166,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 				realTimeAttendanceService.broadcastMessage(objectMapper.writeValueAsString(
 					modelMapper.map(attendance, AttendanceDTO.class)));
 				return new MessageDTO(
-					"Status: " + attendance.getStatus(),
+					"Welcome " + rfidCredential.get().getStudent().getLastName() + ", you are " + attendance.getStatus().name(),
 					CodeStatus.OK
 				);
 			}

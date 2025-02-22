@@ -6,7 +6,7 @@ import com.pshs.ams.models.dto.user.LoginRequest;
 import com.pshs.ams.models.dto.user.UserDTO;
 import com.pshs.ams.models.entities.User;
 import com.pshs.ams.models.enums.CodeStatus;
-import com.pshs.ams.services.UserService;
+import com.pshs.ams.services.interfaces.UserService;
 import io.quarkus.security.Authenticated;
 import io.smallrye.jwt.auth.principal.DefaultJWTCallerPrincipal;
 import jakarta.annotation.security.PermitAll;

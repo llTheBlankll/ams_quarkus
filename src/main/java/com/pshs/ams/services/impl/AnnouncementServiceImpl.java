@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import jakarta.transaction.Transactional;
+import lombok.extern.log4j.Log4j2;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -17,9 +18,8 @@ import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
+@Log4j2
 public class AnnouncementServiceImpl implements AnnouncementService {
-
-	Logger logger = LogManager.getLogger(this.getClass());
 
 	/**
 	 * Create a new announcement. This method will set the created_at and updated_at
@@ -32,7 +32,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 	@Transactional
 	public CodeStatus createAnnouncement(Announcement announcement) {
 		if (announcement.isPersistent()) {
-			logger.debug("Announcement already exists: {}", announcement.getTitle());
+			log.debug("Announcement already exists: {}", announcement.getTitle());
 			return CodeStatus.EXISTS;
 		}
 		announcement.setCreatedAt(Instant.now());
@@ -54,7 +54,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 	public CodeStatus updateAnnouncement(Announcement announcement, Integer id) {
 		Optional<Announcement> existingAnnouncement = Announcement.findByIdOptional(id);
 		if (existingAnnouncement.isEmpty()) {
-			logger.debug("Announcement id is not found.");
+			log.debug("Announcement id is not found.");
 			return CodeStatus.NOT_FOUND;
 		}
 
@@ -78,7 +78,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 	@Transactional
 	public CodeStatus deleteAnnouncement(Integer id) {
 		if (id == null) {
-			logger.debug("Delete not finished, invalid ID received.");
+			log.debug("Delete not finished, invalid ID received.");
 			return CodeStatus.BAD_REQUEST;
 		}
 
@@ -86,7 +86,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 			Announcement.deleteById(id);
 			return CodeStatus.OK;
 		} else {
-			logger.debug("Announcement id is not found.");
+			log.debug("Announcement id is not found.");
 			return CodeStatus.NOT_FOUND;
 		}
 	}
@@ -101,13 +101,13 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 	@Override
 	public Optional<Announcement> getAnnouncement(Integer id) {
 		if (id == null) {
-			logger.debug("Announcement id is null.");
+			log.debug("Announcement id is null.");
 			return Optional.empty();
 		}
 
 		Optional<Announcement> announcement = Announcement.findByIdOptional(id);
 		if (announcement.isEmpty()) {
-			logger.debug("Announcement id is not found: {}", id);
+			log.debug("Announcement id is not found: {}", id);
 		}
 
 		return announcement;
@@ -124,12 +124,12 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 	@Override
 	public List<Announcement> getAllAnnouncements(Sort sort, Page page) {
 		if (sort == null) {
-			logger.debug("Sort is null.");
+			log.debug("Sort is null.");
 			return List.of();
 		}
 
 		if (page == null) {
-			logger.debug("Page is null.");
+			log.debug("Page is null.");
 			return Announcement.listAll(sort);
 		}
 
@@ -147,21 +147,21 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 	@Override
 	public List<Announcement> searchAnnouncement(String title, Sort sort, Page page) {
 		if (title == null || title.isEmpty()) {
-			logger.debug("Title is null or empty.");
+			log.debug("Title is null or empty.");
 			return List.of();
 		}
 
 		if (sort == null) {
-			logger.debug("Sort is null.");
+			log.debug("Sort is null.");
 			return Announcement.find("title LIKE ?1", "%" + title + "%").list();
 		}
 
 		if (page == null) {
-			logger.debug("Page is null.");
+			log.debug("Page is null.");
 			return Announcement.find("title LIKE ?1", sort, "%" + title + "%").list();
 		}
 
-		logger.debug("Search announcements by title: {}", title);
+		log.debug("Search announcements by title: {}", title);
 		return Announcement.find("title LIKE ?1", sort, "%" + title + "%").page(page).list();
 	}
 

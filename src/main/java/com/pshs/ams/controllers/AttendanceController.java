@@ -3,6 +3,7 @@ package com.pshs.ams.controllers;
 import java.time.LocalDate;
 import java.util.List;
 
+import lombok.extern.log4j.Log4j2;
 import org.jboss.logging.Logger;
 import org.modelmapper.ModelMapper;
 
@@ -35,17 +36,17 @@ import jakarta.ws.rs.NotFoundException;
 
 @ApplicationScoped
 @Path("/api/v1/attendances")
+@Log4j2
 public class AttendanceController {
 
 	@Inject
 	AttendanceService attendanceService;
 	private final ModelMapper mapper = new ModelMapper();
-	@Inject
-	Logger logger;
 
 	@GET
 	@Path("/all")
 	public Response getAllAttendances(@BeanParam PageRequest pageRequest, @BeanParam SortRequest sortRequest) {
+		log.debug("AttendanceController - getAllAttendances() - Get all attendances");
 		return Response.ok(
 				Attendance.findAll(sortRequest.toSort()).page(pageRequest.toPage()).stream().map(
 					attendance -> mapper.map(attendance, AttendanceDTO.class)))
@@ -56,30 +57,43 @@ public class AttendanceController {
 	@Path("/create")
 	public Response createAttendance(AttendanceDTO attendanceDTO, @QueryParam("override") Boolean override) {
 		if (attendanceDTO == null) {
+			log.debug("AttendanceController - createAttendance() - Input is null");
 			return Response.status(Response.Status.BAD_REQUEST)
 				.entity(new MessageDTO("Input is null", CodeStatus.NULL))
 				.build();
 		}
+
+		log.debug("AttendanceController - createAttendance() - Creating attendance");
 		Attendance attendance = mapper.map(attendanceDTO, Attendance.class);
+		log.debug("AttendanceController - createAttendance() - Attendance: {}", attendance);
 		CodeStatus status = attendanceService.createAttendance(attendance, override);
+		log.debug("AttendanceController - createAttendance() - Status: {}", status);
 		return switch (status) {
 			case OK -> {
 				if (override) {
+					log.debug("Attendance overridden successfully");
 					yield Response.status(Response.Status.OK)
 						.entity(new MessageDTO("Attendance overridden successfully", status))
 						.build();
 				} else {
+					log.debug("Attendance created successfully");
 					yield Response.status(Response.Status.OK)
 						.entity(new MessageDTO("Attendance created successfully", status))
 						.build();
 				}
 			}
-			case EXISTS -> Response.status(Response.Status.CONFLICT)
-				.entity(new MessageDTO("Attendance already exists", status))
-				.build();
-			default -> Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-				.entity(new MessageDTO("Internal Server Error", status))
-				.build();
+			case EXISTS -> {
+				log.debug("Attendance already exists");
+				yield Response.status(Response.Status.CONFLICT)
+					.entity(new MessageDTO("Attendance already exists", status))
+					.build();
+			}
+			default -> {
+				log.debug("Internal Server Error");
+				yield Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.entity(new MessageDTO("Internal Server Error", status))
+					.build();
+			}
 		};
 	}
 
@@ -88,13 +102,16 @@ public class AttendanceController {
 	public Response updateAttendance(@PathParam("id") Long id, AttendanceDTO attendanceDTO) {
 		try {
 			Attendance updatedAttendance = attendanceService.updateAttendance(id, attendanceDTO);
-			return Response.ok(mapper.map(updatedAttendance, AttendanceDTO.class))
+			log.debug("AttendanceController - updateAttendance() - Attendance updated successfully");
+			return Response.ok(updatedAttendance.toDTO())
 				.build();
 		} catch (NotFoundException e) {
+			log.error("AttendanceController - updateAttendance() - Attendance not found", e);
 			return Response.status(Response.Status.NOT_FOUND)
 				.entity(new MessageDTO(e.getMessage(), CodeStatus.NOT_FOUND))
 				.build();
 		} catch (Exception e) {
+			log.error("AttendanceController - updateAttendance() - Error updating attendance", e);
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
 				.entity(new MessageDTO("Error updating attendance", CodeStatus.FAILED))
 				.build();
@@ -114,10 +131,11 @@ public class AttendanceController {
 				dateRange
 			);
 		} catch (Exception e) {
+			log.error("AttendanceController - countTotalAttendanceByStatus() - Error counting attendances", e);
 			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageDTO(e.getMessage(), CodeStatus.BAD_REQUEST))
 				.build();
 		}
-
+		log.debug("AttendanceController - countTotalAttendanceByStatus() - count {}", count);
 		return Response.ok(count).build();
 	}
 
@@ -184,7 +202,7 @@ public class AttendanceController {
 			// dateRange, stack);
 			LineChartDTO lineChart;
 			if (foreignEntity != null && id != null) {
-				logger.debug("Called getLineChart");
+				log.debug("Called getLineChart");
 				lineChart = attendanceService.getLineChart(
 					UtilService.statusStringToList(statuses), dateRange, foreignEntity,
 					id, stack
@@ -204,7 +222,7 @@ public class AttendanceController {
 		@QueryParam("attendanceStatuses") String statuses,
 		@BeanParam DateRange dateRange, @PathParam("id") Long id,
 		@PathParam("foreignEntity") AttendanceForeignEntity foreignEntity
-	) throws Exception {
+	) {
 		if (id <= 0) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(
 					new MessageDTO(

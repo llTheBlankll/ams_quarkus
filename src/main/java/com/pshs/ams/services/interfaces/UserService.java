@@ -1,4 +1,4 @@
-package com.pshs.ams.services;
+package com.pshs.ams.services.interfaces;
 
 import com.pshs.ams.models.dto.custom.JWTInformationDTO;
 import com.pshs.ams.models.dto.user.LoginRequest;

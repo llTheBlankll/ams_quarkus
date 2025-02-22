@@ -34,8 +34,8 @@ public class ClassroomController {
 				classroomService.getAllClasses(
 						Sort.by(sort.sortBy, sort.sortDirection),
 						Page.of(page.page, page.size)).stream().map(classroom -> mapper.map(classroom, ClassroomDTO.class))
-						.toList())
-				.build();
+					.toList())
+			.build();
 	}
 
 	@PUT
@@ -44,25 +44,25 @@ public class ClassroomController {
 		if (classroomDTO == null) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(
 					new MessageDTO(
-							"Classroom cannot be null",
-							CodeStatus.BAD_REQUEST))
-					.build();
+						"Classroom cannot be null",
+						CodeStatus.BAD_REQUEST))
+				.build();
 		}
 
 		CodeStatus status = this.classroomService.updateClass(
-				mapper.map(classroomDTO, Classroom.class));
+			mapper.map(classroomDTO, Classroom.class));
 
 		return switch (status) {
 			case OK -> Response.ok(
 					new MessageDTO(
-							"Classroom updated",
-							CodeStatus.OK))
-					.build();
+						"Classroom updated",
+						CodeStatus.OK))
+				.build();
 			default -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(
 					new MessageDTO(
-							"Internal Server Error",
-							CodeStatus.FAILED))
-					.build();
+						"Internal Server Error",
+						CodeStatus.FAILED))
+				.build();
 		};
 	}
 
@@ -72,9 +72,9 @@ public class ClassroomController {
 		if (classroomDTO == null) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(
 					new MessageDTO(
-							"",
-							CodeStatus.BAD_REQUEST))
-					.build();
+						"",
+						CodeStatus.BAD_REQUEST))
+				.build();
 		}
 
 		// Convert the dto to entity
@@ -88,24 +88,24 @@ public class ClassroomController {
 		return switch (status) {
 			case OK -> Response.ok(
 					new MessageDTO(
-							"Classroom created",
-							CodeStatus.OK))
-					.build();
+						"Classroom created",
+						CodeStatus.OK))
+				.build();
 			case BAD_REQUEST -> Response.status(Response.Status.BAD_REQUEST).entity(
 					new MessageDTO(
-							"Classroom cannot be null",
-							CodeStatus.BAD_REQUEST))
-					.build();
+						"Classroom cannot be null",
+						CodeStatus.BAD_REQUEST))
+				.build();
 			case EXISTS -> Response.ok(
 					new MessageDTO(
-							"Classroom already exists",
-							CodeStatus.EXISTS))
-					.build();
+						"Classroom already exists",
+						CodeStatus.EXISTS))
+				.build();
 			default -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(
 					new MessageDTO(
-							"Internal Server Error",
-							CodeStatus.FAILED))
-					.build();
+						"Internal Server Error",
+						CodeStatus.FAILED))
+				.build();
 		};
 	}
 
@@ -115,48 +115,48 @@ public class ClassroomController {
 		if (id <= 0) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(
 					new MessageDTO(
-							"Classroom id cannot be less than or equal to zero",
-							CodeStatus.BAD_REQUEST))
-					.build();
+						"Classroom id cannot be less than or equal to zero",
+						CodeStatus.BAD_REQUEST))
+				.build();
 		}
 
 		return switch (classroomService.deleteClassroom(id)) {
 			case OK -> Response.ok(
 					new MessageDTO(
-							"Classroom deleted",
-							CodeStatus.OK))
-					.build();
+						"Classroom deleted",
+						CodeStatus.OK))
+				.build();
 			case NOT_FOUND -> Response.status(Response.Status.NOT_FOUND).entity(
 					new MessageDTO(
-							"Classroom not found",
-							CodeStatus.NOT_FOUND))
-					.build();
+						"Classroom not found",
+						CodeStatus.NOT_FOUND))
+				.build();
 			default -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(
 					new MessageDTO(
-							"Internal Server Error",
-							CodeStatus.FAILED))
-					.build();
+						"Internal Server Error",
+						CodeStatus.FAILED))
+				.build();
 		};
 	}
 
 	@GET
 	@Path("/search/name/{name}")
 	public Response searchClassroomByName(@PathParam("name") String name, @BeanParam PageRequest pageRequest,
-			@BeanParam SortRequest sortRequest) {
+	                                      @BeanParam SortRequest sortRequest) {
 		if (name.isEmpty()) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(
 					new MessageDTO(
-							"Name cannot be empty",
-							CodeStatus.BAD_REQUEST))
-					.build();
+						"Name cannot be empty",
+						CodeStatus.BAD_REQUEST))
+				.build();
 		}
 
 		return Response.ok(
 				classroomService
-						.searchClassroomByName(name, Page.of(pageRequest.page, pageRequest.size),
-								Sort.by(sortRequest.sortBy, sortRequest.sortDirection))
-						.stream().map(cls -> mapper.map(cls, ClassroomDTO.class)).toList())
-				.build();
+					.searchClassroomByName(name, Page.of(pageRequest.page, pageRequest.size),
+						Sort.by(sortRequest.sortBy, sortRequest.sortDirection))
+					.stream().map(cls -> mapper.map(cls, ClassroomDTO.class)).toList())
+			.build();
 	}
 
 	@GET
@@ -165,17 +165,17 @@ public class ClassroomController {
 		if (id <= 0) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(
 					new MessageDTO(
-							"Classroom id cannot be less than or equal to zero",
-							CodeStatus.BAD_REQUEST))
-					.build();
+						"Classroom id cannot be less than or equal to zero",
+						CodeStatus.BAD_REQUEST))
+				.build();
 		}
 		Optional<Classroom> classroom = classroomService.getClassroom(id);
 		return classroom
-				.map(cls -> Response.ok(mapper.map(cls, ClassroomDTO.class)).build())
-				.orElseGet(() -> Response.status(Response.Status.NOT_FOUND).entity(
-						new MessageDTO(
-								"Classroom not found",
-								CodeStatus.NOT_FOUND))
-						.build());
+			.map(cls -> Response.ok(mapper.map(cls, ClassroomDTO.class)).build())
+			.orElseGet(() -> Response.status(Response.Status.NOT_FOUND).entity(
+					new MessageDTO(
+						"Classroom not found",
+						CodeStatus.NOT_FOUND))
+				.build());
 	}
 }

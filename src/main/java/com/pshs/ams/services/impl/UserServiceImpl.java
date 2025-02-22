@@ -3,7 +3,7 @@ package com.pshs.ams.services.impl;
 import com.pshs.ams.models.dto.custom.JWTInformationDTO;
 import com.pshs.ams.models.dto.user.LoginRequest;
 import com.pshs.ams.models.entities.User;
-import com.pshs.ams.services.UserService;
+import com.pshs.ams.services.interfaces.UserService;
 import io.quarkus.elytron.security.common.BcryptUtil;
 import io.smallrye.jwt.auth.principal.ParseException;
 import io.smallrye.jwt.build.Jwt;
