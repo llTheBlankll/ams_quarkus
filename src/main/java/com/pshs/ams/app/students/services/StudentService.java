@@ -6,6 +6,7 @@ import com.pshs.ams.global.models.enums.CodeStatus;
 import com.pshs.ams.global.models.custom.LineChart;
 import com.pshs.ams.app.strands.models.dto.MostPopularStrandDTO;
 
+import com.pshs.ams.global.models.enums.Sex;
 import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
 
@@ -99,9 +100,17 @@ public interface StudentService {
 
 	long getStudentCountByGradeLevel(Long gradeLevelId);
 
-	Optional<MostPopularStrandDTO> getMostPopularStrand();
+	/**
+	 * Counts the number of students by sex.
+	 *
+	 * @param sex the sex of the students to count
+	 * @return the number of students with the given sex
+	 */
+	long countBySex(Sex sex);
 
 	double getAverageStudentsPerStrand();
+
+	Optional<MostPopularStrandDTO> getMostPopularStrand();
 
 	LineChart getStrandDistribution(LocalDate startDate, LocalDate endDate);
 }

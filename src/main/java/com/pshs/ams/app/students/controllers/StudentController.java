@@ -163,9 +163,9 @@ public class StudentController {
 	}
 
 	@GET
-	@Path("/search/name/{name}")
+	@Path("/search/name")
 	public Response searchStudentByName(
-		@PathParam("name") String name,
+		@QueryParam("name") String name,
 		@BeanParam SortRequest sortRequest,
 		@BeanParam PageRequest pageRequest
 	) {
@@ -184,6 +184,13 @@ public class StudentController {
 	@Path("/{id}/assign-classroom")
 	public Response assignClassroomToStudent(@PathParam("id") Long id, @QueryParam("classroomId") Long classroomId) {
 		try {
+			if (id == null || classroomId == null || id <= 0 || classroomId <= 0) {
+				return Response.status(Response.Status.BAD_REQUEST).entity(new MessageResponse(
+					"Invalid id or classroom id",
+					CodeStatus.BAD_REQUEST
+				)).build();
+			}
+
 			return switch (studentService.assignStudentToClassroom(id, classroomId)) {
 				case OK -> Response.ok(new MessageResponse(
 					"Classroom assigned to student",

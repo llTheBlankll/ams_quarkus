@@ -9,6 +9,7 @@ import com.pshs.ams.global.models.custom.LineChart;
 import com.pshs.ams.app.strands.models.dto.MostPopularStrandDTO;
 import com.pshs.ams.app.classrooms.services.ClassroomService;
 import com.pshs.ams.app.students.services.StudentService;
+import com.pshs.ams.global.models.enums.Sex;
 import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -70,6 +71,17 @@ public class StudentServiceImpl implements StudentService {
 		student.persist();
 		logger.debug("Student created: " + student);
 		return Optional.of(student);
+	}
+
+	/**
+	 * Counts the number of students by sex.
+	 *
+	 * @param sex the sex of the students to count
+	 * @return the number of students with the given sex
+	 */
+	@Override
+	public long countBySex(Sex sex) {
+		return Student.count("cast(sex as string) = ?1", sex.name());
 	}
 
 	/**
