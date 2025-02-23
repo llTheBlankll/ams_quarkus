@@ -90,8 +90,8 @@ public class TeacherController {
 	}
 
 	@GET
-	@Path("/search/name/{name}")
-	public Response getTeacherByName(@PathParam("name") String name, @BeanParam PageRequest pageRequest,
+	@Path("/search/name")
+	public Response getTeacherByName(@QueryParam("name") String name, @BeanParam PageRequest pageRequest,
 			@BeanParam SortRequest sortRequest) {
 		if (name.isEmpty()) {
 			return Response.status(Response.Status.BAD_REQUEST)

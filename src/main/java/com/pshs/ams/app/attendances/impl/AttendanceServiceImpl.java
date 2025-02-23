@@ -809,6 +809,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 		return rankings;
 	}
 
+
 	@Override
 	@Transactional
 	public Attendance updateAttendance(Long id, AttendanceDTO attendanceDTO) {
@@ -831,7 +832,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 	}
 
 	@Override
-	public List<Student> getAbsentStudents(DateRange dateRange) {
+	public List<Student> getAbsentStudents(DateRange dateRange) throws IllegalArgumentException {
 		logger.debug("Getting absent students for date range: " + dateRange);
 
 		if (dateRange == null || dateRange.getStartDate() == null || dateRange.getEndDate() == null) {

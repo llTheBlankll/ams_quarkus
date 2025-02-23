@@ -2,6 +2,7 @@ package com.pshs.ams.global.schedulers;
 
 import java.time.LocalDate;
 import java.util.List;
+
 import org.jboss.logging.Logger;
 import com.pshs.ams.global.models.custom.DateRange;
 import com.pshs.ams.app.attendances.models.entities.Attendance;
@@ -21,11 +22,11 @@ public class AbsentSchedule {
 	@Inject
 	AttendanceService attendanceService;
 
-	@Scheduled(cron = "59 59 23 * * ?") // Runs every day at 11:59:59 PM
+	@Scheduled(cron = "0 0 * * * ?") // Runs every hour
 	public void checkAbsent() {
 		logger.info("Checking absent students");
 		List<Student> absentStudents =
-				attendanceService.getAbsentStudents(new DateRange(LocalDate.now(), LocalDate.now()));
+			attendanceService.getAbsentStudents(new DateRange(LocalDate.now(), LocalDate.now()));
 		// Create absent attendance for each student
 		Attendance attendance = new Attendance();
 		for (Student student : absentStudents) {
