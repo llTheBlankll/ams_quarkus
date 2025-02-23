@@ -53,7 +53,7 @@ public class Student extends PanacheEntityBase {
 	@Column(name = "address", length = Integer.MAX_VALUE)
 	private String address;
 
-	@Column(name = "sex", columnDefinition = "sex not null")
+	@Column(name = "sex")
 	@Enumerated(EnumType.STRING)
 	private Sex sex;
 

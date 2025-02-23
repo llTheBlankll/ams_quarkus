@@ -69,7 +69,6 @@ public class StudentServiceImpl implements StudentService {
 		}
 
 		student.persist();
-		logger.debug("Student created: " + student);
 		return Optional.of(student);
 	}
 
