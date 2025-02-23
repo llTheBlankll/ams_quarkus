@@ -1,21 +1,28 @@
 package com.pshs.ams.app.classrooms.controllers;
 
+import com.pshs.ams.app.classrooms.exceptions.ClassroomExistsException;
 import com.pshs.ams.app.classrooms.models.dto.ClassroomDTO;
+import com.pshs.ams.app.classrooms.models.dto.ClassroomTeacherDTO;
+import com.pshs.ams.app.classrooms.models.entities.Classroom;
+import com.pshs.ams.app.classrooms.services.ClassroomService;
+import com.pshs.ams.app.students.models.dto.StudentDTO;
+import com.pshs.ams.app.students.models.entities.Student;
 import com.pshs.ams.global.models.custom.MessageResponse;
 import com.pshs.ams.global.models.custom.PageRequest;
 import com.pshs.ams.global.models.custom.SortRequest;
-import com.pshs.ams.app.classrooms.models.entities.Classroom;
 import com.pshs.ams.global.models.enums.CodeStatus;
-import com.pshs.ams.app.classrooms.services.ClassroomService;
 import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Response;
+import org.hibernate.collection.spi.PersistentCollection;
+import org.jboss.logging.Logger;
 import org.modelmapper.ModelMapper;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 @ApplicationScoped
@@ -25,7 +32,15 @@ public class ClassroomController {
 	@Inject
 	ClassroomService classroomService;
 
+	@Inject
+	Logger log;
+
 	private final ModelMapper mapper = new ModelMapper();
+
+	public ClassroomController() {
+		mapper.getConfiguration().setPropertyCondition(context ->
+			!(context.getSource() instanceof PersistentCollection));
+	}
 
 	@GET
 	@Path("/all")
@@ -40,8 +55,8 @@ public class ClassroomController {
 
 	@PUT
 	@Path("/update")
-	public Response updateClassroom(ClassroomDTO classroomDTO) {
-		if (classroomDTO == null) {
+	public Response updateClassroom(ClassroomDTO classroomInput) {
+		if (classroomInput == null) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(
 					new MessageResponse(
 						"Classroom cannot be null",
@@ -49,21 +64,24 @@ public class ClassroomController {
 				.build();
 		}
 
-		CodeStatus status = this.classroomService.updateClass(
-			mapper.map(classroomDTO, Classroom.class));
+		Optional<Classroom> classroom = this.classroomService.updateClass(
+			mapper.map(classroomInput, Classroom.class)
+		);
 
-		return switch (status) {
-			case OK -> Response.ok(
+		if (classroom.isEmpty()) {
+			return Response.status(Response.Status.NOT_FOUND).entity(
 					new MessageResponse(
-						"Classroom updated",
-						CodeStatus.OK))
+						"Classroom not found",
+						CodeStatus.NOT_FOUND))
 				.build();
-			default -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(
-					new MessageResponse(
-						"Internal Server Error",
-						CodeStatus.FAILED))
-				.build();
-		};
+		}
+
+		ClassroomDTO classroomDTO = mapper.map(classroom.get(), ClassroomDTO.class);
+
+		return Response.ok(
+				classroomDTO
+			)
+			.build();
 	}
 
 	@POST
@@ -83,30 +101,27 @@ public class ClassroomController {
 		classroom.setCreatedAt(now);
 		classroom.setUpdatedAt(now);
 
-		CodeStatus status = classroomService.createClass(classroom);
+		try {
+			Optional<Classroom> createdClassroom = classroomService.createClass(classroom);
+			if (createdClassroom.isEmpty()) {
+				return Response.status(Response.Status.CONFLICT).entity(
+						new MessageResponse(
+							"Classroom already exists",
+							CodeStatus.EXISTS))
+					.build();
+			}
 
-		return switch (status) {
-			case OK -> Response.ok(
-					new MessageResponse(
-						"Classroom created",
-						CodeStatus.OK))
+			return Response.ok(
+					mapper.map(createdClassroom.get(), ClassroomDTO.class)
+				)
 				.build();
-			case BAD_REQUEST -> Response.status(Response.Status.BAD_REQUEST).entity(
+		} catch (IllegalArgumentException | ClassroomExistsException e) {
+			return Response.status(Response.Status.BAD_REQUEST).entity(
 					new MessageResponse(
-						"Classroom cannot be null",
+						e.getMessage(),
 						CodeStatus.BAD_REQUEST))
 				.build();
-			case EXISTS -> Response.ok(
-					new MessageResponse(
-						"Classroom already exists",
-						CodeStatus.EXISTS))
-				.build();
-			default -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(
-					new MessageResponse(
-						"Internal Server Error",
-						CodeStatus.FAILED))
-				.build();
-		};
+		}
 	}
 
 	@DELETE
@@ -120,28 +135,25 @@ public class ClassroomController {
 				.build();
 		}
 
-		return switch (classroomService.deleteClassroom(id)) {
-			case OK -> Response.ok(
+		try {
+			classroomService.deleteClassroom(id);
+			return Response.ok(
+				new MessageResponse(
+					"Classroom deleted",
+					CodeStatus.OK)
+			).build();
+		} catch (IllegalArgumentException | ClassroomExistsException e) {
+			return Response.status(Response.Status.BAD_REQUEST).entity(
 					new MessageResponse(
-						"Classroom deleted",
-						CodeStatus.OK))
+						e.getMessage(),
+						CodeStatus.BAD_REQUEST))
 				.build();
-			case NOT_FOUND -> Response.status(Response.Status.NOT_FOUND).entity(
-					new MessageResponse(
-						"Classroom not found",
-						CodeStatus.NOT_FOUND))
-				.build();
-			default -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(
-					new MessageResponse(
-						"Internal Server Error",
-						CodeStatus.FAILED))
-				.build();
-		};
+		}
 	}
 
 	@GET
-	@Path("/search/name/{name}")
-	public Response searchClassroomByName(@PathParam("name") String name, @BeanParam PageRequest pageRequest,
+	@Path("/search/name")
+	public Response searchClassroomByName(@QueryParam("name") String name, @BeanParam PageRequest pageRequest,
 	                                      @BeanParam SortRequest sortRequest) {
 		if (name.isEmpty()) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(
@@ -177,5 +189,38 @@ public class ClassroomController {
 						"Classroom not found",
 						CodeStatus.NOT_FOUND))
 				.build());
+	}
+
+	@PUT
+	@Path("/{id}/assign-students")
+	public Response assignStudentsToClassroom(@PathParam("id") Long classroomId, List<StudentDTO> students) {
+		if (classroomId == null || classroomId <= 0 || students == null || students.isEmpty()) {
+			log.debug("assignStudentsToClassroom() - Classroom id cannot be less than or equal to zero or students cannot be null or empty");
+			return Response.status(Response.Status.BAD_REQUEST).entity(
+					new MessageResponse(
+						"Classroom id cannot be less than or equal to zero or students cannot be null or empty",
+						CodeStatus.BAD_REQUEST))
+				.build();
+		}
+
+		try {
+			log.debug("assignStudentsToClassroom() - Assigning students to classroom");
+			List<Student> assignedStudents = classroomService.assignStudentsToClassroom(
+				classroomId,
+				students.stream().map(st -> mapper.map(st, Student.class)).toList()
+			);
+			log.debug("assignStudentsToClassroom() - Students assigned to classroom");
+			return Response.ok(
+					assignedStudents.stream().map(st -> mapper.map(st, StudentDTO.class)).toList()
+				)
+				.build();
+		} catch (ClassroomExistsException | IllegalArgumentException e) {
+			log.error("assignStudentsToClassroom() - Error assigning students to classroom", e);
+			return Response.status(Response.Status.BAD_REQUEST).entity(
+					new MessageResponse(
+						e.getMessage(),
+						CodeStatus.BAD_REQUEST))
+				.build();
+		}
 	}
 }
