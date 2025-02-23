@@ -1,7 +1,6 @@
-package com.pshs.ams.global.services;
+package com.pshs.ams.app.reports.services;
 
 public interface ReportService {
-
 
 	void generateSF2Report();
 }
