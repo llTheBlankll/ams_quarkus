@@ -81,7 +81,7 @@ public class TeacherServiceImpl implements TeacherService {
 	public CodeStatus updateTeacher(Teacher teacher) {
 		if (teacher == null) {
 			logger.debug("Teacher is null");
-			return CodeStatus.NULL;
+			return CodeStatus.BAD_INPUT;
 		}
 
 		if (teacher.isPersistent()) {

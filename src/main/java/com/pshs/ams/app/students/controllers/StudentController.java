@@ -82,7 +82,7 @@ public class StudentController {
 		if (studentDTO == null) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageResponse(
 				"Student is not provided",
-				CodeStatus.NULL
+				CodeStatus.BAD_INPUT
 			)).build();
 		}
 		Student student = this.modelMapper.map(studentDTO, Student.class);
@@ -101,7 +101,7 @@ public class StudentController {
 		} catch (StudentExistsException e) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageResponse(
 				"Student already exists",
-				CodeStatus.EXISTS
+				CodeStatus.CONFLICT
 			)).build();
 		} catch (IllegalArgumentException e) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(new MessageResponse(

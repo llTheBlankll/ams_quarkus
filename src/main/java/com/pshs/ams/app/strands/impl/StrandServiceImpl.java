@@ -108,7 +108,7 @@ public class StrandServiceImpl implements StrandService {
 	public CodeStatus updateStrand(Strand strand, Integer id) {
 		if (strand == null || id <= 0) {
 			logger.debug("Strand is null");
-			return CodeStatus.NULL;
+			return CodeStatus.BAD_INPUT;
 		}
 
 		Optional<Strand> existingStrand = Strand.findByIdOptional(id);
