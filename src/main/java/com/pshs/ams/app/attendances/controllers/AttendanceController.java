@@ -58,7 +58,7 @@ public class AttendanceController {
 		if (attendanceDTO == null) {
 			log.debug("AttendanceController - createAttendance() - Input is null");
 			return Response.status(Response.Status.BAD_REQUEST)
-				.entity(new MessageResponse("Input is null", CodeStatus.NULL))
+				.entity(new MessageResponse("Input is null", CodeStatus.BAD_INPUT))
 				.build();
 		}
 
@@ -81,7 +81,7 @@ public class AttendanceController {
 						.build();
 				}
 			}
-			case EXISTS -> {
+			case CONFLICT -> {
 				log.debug("Attendance already exists");
 				yield Response.status(Response.Status.CONFLICT)
 					.entity(new MessageResponse("Attendance already exists", status))

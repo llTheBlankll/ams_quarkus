@@ -83,7 +83,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 	public CodeStatus createAttendance(Attendance attendance, Boolean override) {
 		if (attendance == null) {
 			logger.debug("Attendance is null");
-			return CodeStatus.NULL;
+			return CodeStatus.BAD_INPUT;
 		}
 
 		override = override != null && override;
@@ -99,7 +99,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 			if (existingAttendance.isPresent()) {
 				if (!override) {
 					logger.debug("Student already has attendance for today correlated to the date and status");
-					return CodeStatus.EXISTS;
+					return CodeStatus.CONFLICT;
 				}
 				logger.debug("Overriding attendance for student: " + attendance.getStudent().getId());
 				Attendance.deleteById(existingAttendance.get().getId());
@@ -126,7 +126,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 			logger.debug("RFID Card DTO is null");
 			return new MessageResponse(
 				"RFID Card DTO is null",
-				CodeStatus.NULL
+				CodeStatus.BAD_INPUT
 			);
 		}
 
@@ -157,7 +157,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 					logger.debug("Student already has attendance for today correlated to the date and status");
 					return new MessageResponse(
 						"Hi " + rfidCredential.get().getStudent().getLastName() + ", welcome! :D",
-						CodeStatus.EXISTS
+						CodeStatus.CONFLICT
 					);
 				}
 
@@ -224,7 +224,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 					logger.debug("Student already has excused attendance for today correlated to the date and status");
 					return new MessageResponse(
 						"Already Excused",
-						CodeStatus.EXISTS
+						CodeStatus.CONFLICT
 					);
 				}
 

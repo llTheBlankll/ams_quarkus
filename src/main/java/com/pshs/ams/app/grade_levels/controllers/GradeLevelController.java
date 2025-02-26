@@ -62,7 +62,7 @@ public class GradeLevelController {
 		return switch (status) {
 			case BAD_REQUEST ->
 				Response.status(Response.Status.BAD_REQUEST).entity(new MessageResponse("Grade Level cannot be null", CodeStatus.BAD_REQUEST)).build();
-			case EXISTS -> Response.ok(new MessageResponse("Grade level already exists", CodeStatus.EXISTS)).build();
+			case CONFLICT -> Response.ok(new MessageResponse("Grade level already exists", CodeStatus.CONFLICT)).build();
 			case OK ->
 				Response.status(Response.Status.OK).entity(new MessageResponse("Grade level created", CodeStatus.OK)).build();
 			default ->

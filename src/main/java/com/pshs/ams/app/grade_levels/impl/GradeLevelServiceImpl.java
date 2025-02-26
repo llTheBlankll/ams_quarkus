@@ -63,7 +63,7 @@ public class GradeLevelServiceImpl implements GradeLevelService {
 		Optional<GradeLevel> existingGradeLevel = GradeLevel.find("name", gradeLevel.getName()).firstResultOptional();
 		if (existingGradeLevel.isPresent()) {
 			logger.debug("Grade level already exists: " + gradeLevel.getName());
-			return CodeStatus.EXISTS;
+			return CodeStatus.CONFLICT;
 		}
 
 		// Persist the grade level

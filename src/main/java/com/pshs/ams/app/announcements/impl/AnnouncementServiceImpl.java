@@ -31,7 +31,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 	public CodeStatus createAnnouncement(Announcement announcement) {
 		if (announcement.isPersistent()) {
 			log.debug("Announcement already exists: {}", announcement.getTitle());
-			return CodeStatus.EXISTS;
+			return CodeStatus.CONFLICT;
 		}
 		announcement.setCreatedAt(Instant.now());
 		announcement.setUpdatedAt(Instant.now());

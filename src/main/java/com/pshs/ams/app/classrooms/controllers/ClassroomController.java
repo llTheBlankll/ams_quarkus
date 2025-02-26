@@ -2,7 +2,6 @@ package com.pshs.ams.app.classrooms.controllers;
 
 import com.pshs.ams.app.classrooms.exceptions.ClassroomExistsException;
 import com.pshs.ams.app.classrooms.models.dto.ClassroomDTO;
-import com.pshs.ams.app.classrooms.models.dto.ClassroomTeacherDTO;
 import com.pshs.ams.app.classrooms.models.entities.Classroom;
 import com.pshs.ams.app.classrooms.services.ClassroomService;
 import com.pshs.ams.app.students.models.dto.StudentDTO;
@@ -107,7 +106,7 @@ public class ClassroomController {
 				return Response.status(Response.Status.CONFLICT).entity(
 						new MessageResponse(
 							"Classroom already exists",
-							CodeStatus.EXISTS))
+							CodeStatus.CONFLICT))
 					.build();
 			}
 

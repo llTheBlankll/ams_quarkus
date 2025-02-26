@@ -53,10 +53,10 @@ public class AnnouncementTransactions {
 					CodeStatus.OK
 				)).build();
 			}
-			case EXISTS -> {
+			case CONFLICT -> {
 				return Response.ok(new MessageResponse(
 					"Announcement with ID " + announcementDTO.getId() + " already exists.",
-					CodeStatus.EXISTS
+					CodeStatus.CONFLICT
 				)).build();
 			}
 			default -> {
