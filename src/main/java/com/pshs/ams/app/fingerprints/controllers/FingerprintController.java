@@ -1,5 +1,6 @@
 package com.pshs.ams.app.fingerprints.controllers;
 
+import com.pshs.ams.app.attendances.models.dto.FingerprintAttendance;
 import com.pshs.ams.app.attendances.models.enums.AttendanceMode;
 import com.pshs.ams.app.attendances.services.AttendanceService;
 import com.pshs.ams.app.fingerprints.models.AttendanceFileUpload;
@@ -100,7 +101,15 @@ public class FingerprintController {
 					// Use the formatter to parse the date string
 					LocalDateTime dateTime = LocalDateTime.parse(values[1], formatter);
 					AttendanceMode mode = AttendanceMode.valueOf(values[2]);
+					FingerprintAttendance fingerprintAttendance = new FingerprintAttendance(
+						fingerprintId,
+						dateTime,
+						mode
+					);
 					log.debug("Enrolling fingerprint with ID: " + fingerprintId + ", date: " + dateTime + ", mode: " + mode);
+
+					// Register attendance
+					attendanceService.fromFingerprint(fingerprintAttendance);
 				} catch (Exception e) {
 					log.error("Error parsing line: " + line + " - " + e.getMessage(), e);
 				}

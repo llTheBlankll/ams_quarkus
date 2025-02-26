@@ -3,7 +3,7 @@ package com.pshs.ams.app.fingerprints.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.pshs.ams.global.models.custom.MessageResponse;
 import com.pshs.ams.global.models.custom.RFIDCard;
-import com.pshs.ams.app.rfid_credentials.models.entities.RfidCredential;
+import com.pshs.ams.app.rfid_credentials.models.entities.StudentCredential;
 import com.pshs.ams.app.attendances.models.enums.AttendanceMode;
 import com.pshs.ams.app.attendances.services.AttendanceService;
 import com.pshs.ams.app.fingerprints.services.FingerprintService;
@@ -28,7 +28,7 @@ public class FingerprintServiceImpl implements FingerprintService {
 			return Optional.empty();
 		}
 
-		Optional<RfidCredential> rfidCredential = RfidCredential.find("fingerprintId", fingerprintId).firstResultOptional();
+		Optional<StudentCredential> rfidCredential = StudentCredential.find("fingerprintId", fingerprintId).firstResultOptional();
 		RFIDCard rfidCard = new RFIDCard();
 		if (rfidCredential.isPresent()) {
 			rfidCard.setHashedLrn(rfidCredential.get().getHashedLrn());
