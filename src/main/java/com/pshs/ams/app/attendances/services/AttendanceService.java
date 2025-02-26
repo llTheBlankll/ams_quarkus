@@ -3,6 +3,7 @@ package com.pshs.ams.app.attendances.services;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.pshs.ams.app.attendances.models.dto.AttendanceDTO;
 import com.pshs.ams.app.attendances.models.dto.ClassroomDemographicsAttendances;
+import com.pshs.ams.app.attendances.models.dto.FingerprintAttendance;
 import com.pshs.ams.global.models.custom.DateRange;
 import com.pshs.ams.global.models.custom.LineChart;
 import com.pshs.ams.global.models.custom.MessageResponse;
@@ -24,6 +25,8 @@ public interface AttendanceService {
 	CodeStatus createAttendance(Attendance attendance, Boolean override);
 
 	MessageResponse fromWebSocket(RFIDCard rfidCard) throws JsonProcessingException;
+
+	void fromFingerprint(FingerprintAttendance attendance) throws IllegalArgumentException, JsonProcessingException;
 
 	/**
 	 * Count total attendance of each status
