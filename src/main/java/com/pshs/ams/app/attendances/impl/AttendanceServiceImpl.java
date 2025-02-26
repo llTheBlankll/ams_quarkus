@@ -14,11 +14,13 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+import com.pshs.ams.app.attendances.models.dto.FingerprintAttendance;
 import com.pshs.ams.app.attendances.models.entities.Attendance;
 import com.pshs.ams.app.classrooms.models.entities.Classroom;
-import com.pshs.ams.app.rfid_credentials.models.entities.RfidCredential;
+import com.pshs.ams.app.rfid_credentials.models.entities.StudentCredential;
 import com.pshs.ams.app.student_schedules.models.entities.StudentSchedule;
 import com.pshs.ams.app.students.models.entities.Student;
+import io.smallrye.common.annotation.NonBlocking;
 import org.jboss.logging.Logger;
 import org.modelmapper.ModelMapper;
 
@@ -53,7 +55,7 @@ import jakarta.ws.rs.NotFoundException;
 public class AttendanceServiceImpl implements AttendanceService {
 
 	@Inject
-	Logger logger;
+	Logger log;
 
 	@Inject
 	RealTimeAttendanceService realTimeAttendanceService;
@@ -82,7 +84,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 	@Transactional
 	public CodeStatus createAttendance(Attendance attendance, Boolean override) {
 		if (attendance == null) {
-			logger.debug("Attendance is null");
+			log.debug("Attendance is null");
 			return CodeStatus.BAD_INPUT;
 		}
 
@@ -98,10 +100,10 @@ public class AttendanceServiceImpl implements AttendanceService {
 
 			if (existingAttendance.isPresent()) {
 				if (!override) {
-					logger.debug("Student already has attendance for today correlated to the date and status");
+					log.debug("Student already has attendance for today correlated to the date and status");
 					return CodeStatus.CONFLICT;
 				}
-				logger.debug("Overriding attendance for student: " + attendance.getStudent().getId());
+				log.debug("Overriding attendance for student: " + attendance.getStudent().getId());
 				Attendance.deleteById(existingAttendance.get().getId());
 				Attendance.flush();
 			}
@@ -110,7 +112,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 			attendance.persistAndFlush();
 			return CodeStatus.OK;
 		} catch (Exception e) {
-			logger.error("Error creating attendance: " + e.getMessage(), e);
+			log.error("Error creating attendance: " + e.getMessage(), e);
 			return CodeStatus.FAILED;
 		}
 	}
@@ -123,17 +125,17 @@ public class AttendanceServiceImpl implements AttendanceService {
 	@Transactional
 	public MessageResponse fromWebSocket(RFIDCard rfidCard) throws JsonProcessingException {
 		if (rfidCard == null || rfidCard.getHashedLrn() == null || rfidCard.getMode() == null) {
-			logger.debug("RFID Card DTO is null");
+			log.debug("RFID Card DTO is null");
 			return new MessageResponse(
 				"RFID Card DTO is null",
 				CodeStatus.BAD_INPUT
 			);
 		}
 
-		Optional<RfidCredential> rfidCredential = RfidCredential.find("hashedLrn = ?1", rfidCard.getHashedLrn())
+		Optional<StudentCredential> rfidCredential = StudentCredential.find("hashedLrn = ?1", rfidCard.getHashedLrn())
 			.firstResultOptional();
 		if (rfidCredential.isEmpty()) {
-			logger.debug("RFID Card not found: " + rfidCard.getHashedLrn());
+			log.debug("RFID Card not found: " + rfidCard.getHashedLrn());
 			return new MessageResponse(
 				"RFID Card not found",
 				CodeStatus.NOT_FOUND
@@ -154,7 +156,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 				// Check if the student has the same attendance for today correlated to the date
 				// and status
 				if (latestAttendanceOptional.isPresent()) {
-					logger.debug("Student already has attendance for today correlated to the date and status");
+					log.debug("Student already has attendance for today correlated to the date and status");
 					return new MessageResponse(
 						"Hi " + rfidCredential.get().getStudent().getLastName() + ", welcome! :D",
 						CodeStatus.CONFLICT
@@ -162,7 +164,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 				}
 
 				// Create attendance
-				logger.debug("Creating attendance for student: " + rfidCredential.get().getStudent());
+				log.debug("Creating attendance for student: " + rfidCredential.get().getStudent());
 				attendance.setTimeIn(LocalTime.now());
 				attendance.setStatus(getAttendanceStatus(rfidCard.getMode(), rfidCredential.get().getStudent()));
 				attendance.persist();
@@ -177,7 +179,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 			case OUT -> {
 				// Get the latest attendance
 				if (latestAttendanceOptional.isEmpty()) {
-					logger.debug("No attendance found for today");
+					log.debug("No attendance found for today");
 					return new MessageResponse(
 						"Not Checked In",
 						CodeStatus.NOT_FOUND
@@ -187,7 +189,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 				// Get Attendance
 				Attendance latestAttendance = latestAttendanceOptional.get();
 				if (latestAttendance.getTimeOut() != null) {
-					logger.debug("Updating time out for student");
+					log.debug("Updating time out for student");
 					latestAttendance.setTimeOut(LocalTime.now());
 					latestAttendance.persist();
 					return new MessageResponse(
@@ -197,7 +199,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 				}
 
 				// Update attendance
-				logger.debug("Updating attendance for student: " + rfidCredential.get().getStudent());
+				log.debug("Updating attendance for student: " + rfidCredential.get().getStudent());
 				latestAttendance.setTimeOut(LocalTime.now());
 				latestAttendance.persist();
 				realTimeAttendanceService.broadcastMessage(objectMapper.writeValueAsString(
@@ -210,7 +212,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
 			case EXCUSED -> {
 				if (latestAttendanceOptional.isEmpty()) {
-					logger.debug(
+					log.debug(
 						"No attendance found, when excusing student, consult to the administrator or teachers.");
 					return new MessageResponse(
 						"Consult admin/teachers",
@@ -218,10 +220,10 @@ public class AttendanceServiceImpl implements AttendanceService {
 					);
 				}
 				// Update attendance
-				logger.debug("Updating attendance for student: " + rfidCredential.get().getStudent());
+				log.debug("Updating attendance for student: " + rfidCredential.get().getStudent());
 				Attendance latestAttendance = latestAttendanceOptional.get();
 				if (latestAttendance.getStatus() == AttendanceStatus.EXCUSED) {
-					logger.debug("Student already has excused attendance for today correlated to the date and status");
+					log.debug("Student already has excused attendance for today correlated to the date and status");
 					return new MessageResponse(
 						"Already Excused",
 						CodeStatus.CONFLICT
@@ -245,6 +247,140 @@ public class AttendanceServiceImpl implements AttendanceService {
 
 			default -> {
 				throw new Error("Invalid attendance mode: " + rfidCard.getMode());
+			}
+		}
+	}
+
+	@Override
+	@Transactional
+	@NonBlocking
+	public void fromFingerprint(FingerprintAttendance fingerprintAttendance) throws JsonProcessingException {
+		if (fingerprintAttendance == null) {
+			log.debug("Fingerprint attendance cannot be null");
+			throw new IllegalArgumentException("Fingerprint attendance cannot be null");
+		}
+
+		Optional<StudentCredential> studentCredentialOptional = StudentCredential.find("fingerprintId = ?", fingerprintAttendance.getFingerprintId())
+			.firstResultOptional();
+		if (studentCredentialOptional.isEmpty()) {
+			log.debug("Fingerprint not found: " + fingerprintAttendance.getFingerprintId());
+			new MessageResponse(
+				"Fingerprint not found",
+				CodeStatus.NOT_FOUND
+			);
+			return;
+		}
+
+		LocalDate now = LocalDate.now();
+		Attendance attendance = new Attendance();
+		attendance.setStudent(studentCredentialOptional.get().getStudent());
+		attendance.setDate(LocalDate.now());
+		Optional<Attendance> latestAttendanceOptional = Attendance
+			.find("date = ?1 AND student.id = ?2", now, studentCredentialOptional.get().getStudent().getId())
+			.firstResultOptional();
+
+		// * Now, what we have to do is to calculate the timeIn, timeOut, and status
+		switch (fingerprintAttendance.getMode()) {
+			case IN -> {
+				// Check if the student has the same attendance for today correlated to the date
+				// and status
+				if (latestAttendanceOptional.isPresent()) {
+					log.debug("Student already has attendance for today correlated to the date and status");
+					new MessageResponse(
+						"Hi " + studentCredentialOptional.get().getStudent().getLastName() + ", welcome! :D",
+						CodeStatus.CONFLICT
+					);
+					return;
+				}
+
+				// Create attendance
+				log.debug("Creating attendance for student: " + studentCredentialOptional.get().getStudent());
+				attendance.setTimeIn(LocalTime.now());
+				attendance.setStatus(getAttendanceStatus(fingerprintAttendance.getMode(), studentCredentialOptional.get().getStudent()));
+				attendance.persist();
+				realTimeAttendanceService.broadcastMessage(objectMapper.writeValueAsString(
+					modelMapper.map(attendance, AttendanceDTO.class)));
+				new MessageResponse(
+					"Welcome " + studentCredentialOptional.get().getStudent().getLastName() + ", you are " + attendance.getStatus().name(),
+					CodeStatus.OK
+				);
+			}
+
+			case OUT -> {
+				// Get the latest attendance
+				if (latestAttendanceOptional.isEmpty()) {
+					log.debug("No attendance found for today");
+					new MessageResponse(
+						"Not Checked In",
+						CodeStatus.NOT_FOUND
+					);
+					return;
+				}
+
+				// Get Attendance
+				Attendance latestAttendance = latestAttendanceOptional.get();
+				if (latestAttendance.getTimeOut() != null) {
+					log.debug("Updating time out for student");
+					latestAttendance.setTimeOut(LocalTime.now());
+					latestAttendance.persist();
+					new MessageResponse(
+						"Time out updated",
+						CodeStatus.OK
+					);
+					return;
+				}
+
+				// Update attendance
+				log.debug("Updating attendance for student: " + studentCredentialOptional.get().getStudent());
+				latestAttendance.setTimeOut(LocalTime.now());
+				latestAttendance.persist();
+				realTimeAttendanceService.broadcastMessage(objectMapper.writeValueAsString(
+					modelMapper.map(latestAttendance, AttendanceDTO.class)));
+				new MessageResponse(
+					"Status: " + latestAttendance.getStatus(),
+					CodeStatus.OK
+				);
+			}
+
+			case EXCUSED -> {
+				if (latestAttendanceOptional.isEmpty()) {
+					log.debug(
+						"No attendance found, when excusing student, consult to the administrator or teachers.");
+					new MessageResponse(
+						"Consult admin/teachers",
+						CodeStatus.OK
+					);
+					return;
+				}
+				// Update attendance
+				log.debug("Updating attendance for student: " + studentCredentialOptional.get().getStudent());
+				Attendance latestAttendance = latestAttendanceOptional.get();
+				if (latestAttendance.getStatus() == AttendanceStatus.EXCUSED) {
+					log.debug("Student already has excused attendance for today correlated to the date and status");
+					new MessageResponse(
+						"Already Excused",
+						CodeStatus.CONFLICT
+					);
+					return;
+				}
+
+				latestAttendance.setNotes("This student was scanned as excused.");
+				latestAttendance
+					.setStatus(getAttendanceStatus(fingerprintAttendance.getMode(), studentCredentialOptional.get().getStudent()));
+				latestAttendance.setTimeOut(LocalTime.now());
+				latestAttendance.persist();
+
+				realTimeAttendanceService.broadcastMessage(
+					objectMapper.writeValueAsString(
+						modelMapper.map(latestAttendance, AttendanceDTO.class)));
+				new MessageResponse(
+					"Status: EXCUSED",
+					CodeStatus.OK
+				);
+			}
+
+			default -> {
+				throw new Error("Invalid attendance mode: " + fingerprintAttendance.getMode());
 			}
 		}
 	}
@@ -292,9 +428,9 @@ public class AttendanceServiceImpl implements AttendanceService {
 			throw new Error("Invalid attendance status: " + attendanceStatus);
 		}
 
-		logger.debug("Count total attendance by status: " + attendanceStatus);
-		logger.debug("Date Range: " + dateRange);
-		logger.debug("Foreign Entity: " + foreignEntity);
+		log.debug("Count total attendance by status: " + attendanceStatus);
+		log.debug("Date Range: " + dateRange);
+		log.debug("Foreign Entity: " + foreignEntity);
 
 		if (foreignEntity == AttendanceForeignEntity.STUDENT) {
 			// Check if exists
@@ -339,18 +475,18 @@ public class AttendanceServiceImpl implements AttendanceService {
 		DateRange dateRange, Long id
 	) {
 		if (id <= 0) {
-			logger.debug("Invalid classroom id: " + id);
+			log.debug("Invalid classroom id: " + id);
 			throw new Error("Invalid classroom id: " + id);
 		}
 		if (statuses == null || statuses.isEmpty()) {
-			logger.debug("Invalid attendance status: " + statuses);
+			log.debug("Invalid attendance status: " + statuses);
 			throw new Error("Invalid attendance status: " + statuses);
 		}
 
 		// Check if classroom exists
 		Optional<Classroom> classroom = classroomService.getClassroom(id);
 		if (classroom.isEmpty()) {
-			logger.debug("Classroom not found: " + id);
+			log.debug("Classroom not found: " + id);
 			throw new Error("Classroom not found: " + id);
 		}
 
@@ -374,8 +510,8 @@ public class AttendanceServiceImpl implements AttendanceService {
 	 */
 	@Override
 	public long countTotalByAttendanceByStatus(List<AttendanceStatus> attendanceStatus, DateRange dateRange) {
-		logger.debug("Count total attendance by status: " + attendanceStatus);
-		logger.debug("Date Range: " + dateRange);
+		log.debug("Count total attendance by status: " + attendanceStatus);
+		log.debug("Date Range: " + dateRange);
 		return Attendance.count(
 			"status IN ?1 AND date BETWEEN ?2 AND ?3", attendanceStatus, dateRange.getStartDate(),
 			dateRange.getEndDate()
@@ -419,24 +555,24 @@ public class AttendanceServiceImpl implements AttendanceService {
 	) {
 		// Check if parameters are valid
 		if (attendanceStatus == null || attendanceStatus.isEmpty()) {
-			logger.debug("Invalid attendance status provided");
+			log.debug("Invalid attendance status provided");
 			throw new IllegalArgumentException("Attendance status list cannot be null or empty");
 		}
 		if (dateRange == null || dateRange.getStartDate() == null || dateRange.getEndDate() == null) {
-			logger.debug("Invalid date range provided");
+			log.debug("Invalid date range provided");
 			throw new IllegalArgumentException("Date range cannot be null and must have both start and end dates");
 		}
 		if (foreignEntity == null) {
-			logger.debug("Foreign entity is null");
+			log.debug("Foreign entity is null");
 			throw new IllegalArgumentException("Foreign entity cannot be null");
 		}
 		if (id == null || id <= 0) {
-			logger.debug("Invalid id provided: " + id);
+			log.debug("Invalid id provided: " + id);
 			throw new IllegalArgumentException("Id must be a positive integer");
 		}
 
 		sort = Sort.by("date", "timeIn", "timeOut").descending();
-		logger.debug("Sorting by date, time in, and time out");
+		log.debug("Sorting by date, time in, and time out");
 		if (foreignEntity == AttendanceForeignEntity.STUDENT) {
 			return Attendance
 				.find(
@@ -468,7 +604,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 		List<AttendanceStatus> statuses, DateRange dateRange,
 		AttendanceForeignEntity foreignEntity, Long id, TimeStack stack
 	) {
-		logger.debug("Called getLineChart");
+		log.debug("Called getLineChart");
 		List<String> labels = new ArrayList<>();
 		List<String> data = new ArrayList<>();
 		Map<DateRange, Long> dailyCounts = new TreeMap<>(Comparator.comparing(DateRange::getStartDate));
@@ -487,7 +623,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 				dailyCounts.put(periodRange, 0L);
 			}
 
-			logger.debug("Count total attendance: " + periodRange);
+			log.debug("Count total attendance: " + periodRange);
 			long attendances = 0;
 			if (foreignEntity == AttendanceForeignEntity.STUDENT
 				|| foreignEntity == AttendanceForeignEntity.CLASSROOM) {
@@ -541,7 +677,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 	 */
 	@Override
 	public LineChart getLineChart(List<AttendanceStatus> statuses, DateRange dateRange, TimeStack stack) {
-		logger.debug("Called getLineChart, no foreign entity");
+		log.debug("Called getLineChart, no foreign entity");
 		List<String> labels = new ArrayList<>();
 		List<String> data = new ArrayList<>();
 		Map<LocalDate, Integer> dailyCounts = new TreeMap<>();
@@ -573,7 +709,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 				dailyCounts.put(date, 0);
 			}
 
-			logger.debug("Count total attendance: " + new DateRange(currentDate, nextDate));
+			log.debug("Count total attendance: " + new DateRange(currentDate, nextDate));
 			long attendances = countTotalByAttendanceByStatus(statuses, new DateRange(currentDate, nextDate));
 			dailyCounts.put(date, dailyCounts.get(date) + (int) attendances);
 
@@ -602,23 +738,23 @@ public class AttendanceServiceImpl implements AttendanceService {
 		DateRange dateRange, List<AttendanceStatus> statuses,
 		AttendanceForeignEntity foreignEntity, Integer id, List<Sex> sexes
 	) {
-		logger.debug("Count total attendance: " + dateRange);
+		log.debug("Count total attendance: " + dateRange);
 		if (foreignEntity == AttendanceForeignEntity.STUDENT) {
-			logger.debug("Student: " + foreignEntity);
+			log.debug("Student: " + foreignEntity);
 			return Attendance.count(
 				"status IN ?1 BETWEEN ?2 AND ?3 AND student.id = ?4", statuses,
 				dateRange.getStartDate(),
 				dateRange.getEndDate(), id
 			);
 		} else if (foreignEntity == AttendanceForeignEntity.CLASSROOM) {
-			logger.debug("Classroom: " + foreignEntity);
+			log.debug("Classroom: " + foreignEntity);
 			return Attendance.count(
 				"status IN ?1 BETWEEN ?2 AND ?3 AND classroom.id = ?4", statuses,
 				dateRange.getStartDate(), dateRange.getEndDate(), id
 			);
 		}
 
-		logger.debug("All: " + dateRange);
+		log.debug("All: " + dateRange);
 		return Attendance.count(
 			"status IN ?1 BETWEEN ?2 AND ?3", statuses, dateRange.getStartDate(),
 			dateRange.getEndDate()
@@ -635,7 +771,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 	 */
 	@Override
 	public long countAttendances(DateRange dateRange, List<AttendanceStatus> statuses, List<Sex> sexes) {
-		logger.debug("Count total attendance: " + dateRange);
+		log.debug("Count total attendance: " + dateRange);
 		return Attendance.count(
 			"status IN ?1 BETWEEN ?2 AND ?3", statuses, dateRange.getStartDate(),
 			dateRange.getEndDate()
@@ -650,7 +786,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 	 */
 	@Override
 	public long countAttendancesInClass(Long classroomId) {
-		logger.debug("Count total attendance in class: " + classroomId);
+		log.debug("Count total attendance in class: " + classroomId);
 		return Attendance.count("classroom.id = ?1", classroomId);
 	}
 
@@ -663,7 +799,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 	 */
 	@Override
 	public List<Attendance> getAllStudentAttendance(Long studentId, Page page) {
-		logger.debug("Get all student attendance: " + studentId);
+		log.debug("Get all student attendance: " + studentId);
 		return Attendance.find("student.id", studentId).page(page).list();
 	}
 
@@ -675,7 +811,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 	 */
 	@Override
 	public long totalStudentAttendance(Long studentId) {
-		logger.debug("Get total student attendance: " + studentId);
+		log.debug("Get total student attendance: " + studentId);
 		return Attendance.count("student.id = ?1", studentId);
 	}
 
@@ -747,7 +883,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
 	@Override
 	public List<ClassroomRankingDTO> getClassroomRanking(DateRange dateRange, Integer limit) {
-		logger.debug("Classroom Ranking Date range: " + dateRange);
+		log.debug("Classroom Ranking Date range: " + dateRange);
 		// Get all classrooms
 		List<Classroom> classrooms = Classroom.listAll();
 
@@ -766,11 +902,11 @@ public class AttendanceServiceImpl implements AttendanceService {
 					classroom.getId(), dateRange.getStartDate(), dateRange.getEndDate(),
 					Arrays.asList(AttendanceStatus.ON_TIME, AttendanceStatus.LATE)
 				);
-				logger.debug("Total attendance: " + totalAttendance);
+				log.debug("Total attendance: " + totalAttendance);
 
 				// Calculate attendance rate (attendance per student)
 				double attendanceRate = (double) totalAttendance / totalStudents;
-				logger.debug("Attendance rate: " + attendanceRate);
+				log.debug("Attendance rate: " + attendanceRate);
 				// Create ranking DTO
 				ClassroomRankingDTO rankingDTO = new ClassroomRankingDTO()
 					.setClassroomId(classroom.getId())
@@ -778,7 +914,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 					.setRoom(classroom.getRoom())
 					.setTotalAttendance(totalAttendance)
 					.setAttendanceRate(attendanceRate);
-				logger.debug("Ranking: " + rankingDTO);
+				log.debug("Ranking: " + rankingDTO);
 
 				rankings.add(rankingDTO);
 			}
@@ -805,7 +941,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 				.limit(limit)
 				.collect(Collectors.toList());
 		}
-		logger.debug("Rankings: " + rankings);
+		log.debug("Rankings: " + rankings);
 		return rankings;
 	}
 
@@ -833,10 +969,10 @@ public class AttendanceServiceImpl implements AttendanceService {
 
 	@Override
 	public List<Student> getAbsentStudents(DateRange dateRange) throws IllegalArgumentException {
-		logger.debug("Getting absent students for date range: " + dateRange);
+		log.debug("Getting absent students for date range: " + dateRange);
 
 		if (dateRange == null || dateRange.getStartDate() == null || dateRange.getEndDate() == null) {
-			logger.error("Invalid date range provided");
+			log.error("Invalid date range provided");
 			throw new IllegalArgumentException("Date range cannot be null and must have both start and end dates");
 		}
 
@@ -876,7 +1012,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 			attendanceStatuses, today, hourAgoTime, currentTime
 		);
 
-		logger.debug("Total last hour attendance (between " + hourAgoTime + " and " + currentTime + "): " + total);
+		log.debug("Total last hour attendance (between " + hourAgoTime + " and " + currentTime + "): " + total);
 		return total;
 	}
 
@@ -902,7 +1038,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 			attendanceStatuses, today, hourAgoTime, currentTime
 		).list();
 
-		logger.debug(
+		log.debug(
 			"Total last hour attendance (between " + hourAgoTime + " and " + currentTime + "): " + attendances.size());
 
 		// Extract and return the list of students from attendance records
