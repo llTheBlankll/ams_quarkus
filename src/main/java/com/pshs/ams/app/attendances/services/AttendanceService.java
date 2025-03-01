@@ -22,7 +22,7 @@ import java.util.List;
 
 public interface AttendanceService {
 
-	CodeStatus createAttendance(Attendance attendance, Boolean override);
+	CodeStatus createAttendance(Attendance attendance, Boolean override, Boolean checkForAbsent) throws IllegalArgumentException;
 
 	MessageResponse fromWebSocket(RFIDCard rfidCard) throws JsonProcessingException;
 

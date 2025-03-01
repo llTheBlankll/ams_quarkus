@@ -20,7 +20,6 @@ import com.pshs.ams.app.classrooms.models.entities.Classroom;
 import com.pshs.ams.app.rfid_credentials.models.entities.StudentCredential;
 import com.pshs.ams.app.student_schedules.models.entities.StudentSchedule;
 import com.pshs.ams.app.students.models.entities.Student;
-import io.smallrye.common.annotation.NonBlocking;
 import org.jboss.logging.Logger;
 import org.modelmapper.ModelMapper;
 
@@ -82,7 +81,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 	 */
 	@Override
 	@Transactional
-	public CodeStatus createAttendance(Attendance attendance, Boolean override) {
+	public CodeStatus createAttendance(Attendance attendance, Boolean override, Boolean checkForAbsent) throws IllegalArgumentException {
 		if (attendance == null) {
 			log.debug("Attendance is null");
 			return CodeStatus.BAD_INPUT;
@@ -109,6 +108,11 @@ public class AttendanceServiceImpl implements AttendanceService {
 			}
 
 			attendance.setId(null);
+			if (checkForAbsent) {
+				Optional<AttendanceStatus> attendanceStatusOptional = isAbsent(attendance.getStudent());
+				attendanceStatusOptional.ifPresent(attendance::setStatus);
+			}
+
 			attendance.persistAndFlush();
 			return CodeStatus.OK;
 		} catch (Exception e) {
@@ -253,14 +257,13 @@ public class AttendanceServiceImpl implements AttendanceService {
 
 	@Override
 	@Transactional
-	@NonBlocking
 	public void fromFingerprint(FingerprintAttendance fingerprintAttendance) throws JsonProcessingException {
 		if (fingerprintAttendance == null) {
 			log.debug("Fingerprint attendance cannot be null");
 			throw new IllegalArgumentException("Fingerprint attendance cannot be null");
 		}
 
-		Optional<StudentCredential> studentCredentialOptional = StudentCredential.find("fingerprintId = ?", fingerprintAttendance.getFingerprintId())
+		Optional<StudentCredential> studentCredentialOptional = StudentCredential.find("fingerprintId = ?1", fingerprintAttendance.getFingerprintId())
 			.firstResultOptional();
 		if (studentCredentialOptional.isEmpty()) {
 			log.debug("Fingerprint not found: " + fingerprintAttendance.getFingerprintId());
@@ -271,12 +274,11 @@ public class AttendanceServiceImpl implements AttendanceService {
 			return;
 		}
 
-		LocalDate now = LocalDate.now();
 		Attendance attendance = new Attendance();
 		attendance.setStudent(studentCredentialOptional.get().getStudent());
-		attendance.setDate(LocalDate.now());
-		Optional<Attendance> latestAttendanceOptional = Attendance
-			.find("date = ?1 AND student.id = ?2", now, studentCredentialOptional.get().getStudent().getId())
+		attendance.setDate(fingerprintAttendance.getDateTime().toLocalDate());
+		Optional<Attendance> attendanceScannedDate = Attendance
+			.find("date = ?1 AND student.id = ?2", fingerprintAttendance.getDateTime().toLocalDate(), studentCredentialOptional.get().getStudent().getId())
 			.firstResultOptional();
 
 		// * Now, what we have to do is to calculate the timeIn, timeOut, and status
@@ -284,7 +286,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 			case IN -> {
 				// Check if the student has the same attendance for today correlated to the date
 				// and status
-				if (latestAttendanceOptional.isPresent()) {
+				if (attendanceScannedDate.isPresent()) {
 					log.debug("Student already has attendance for today correlated to the date and status");
 					new MessageResponse(
 						"Hi " + studentCredentialOptional.get().getStudent().getLastName() + ", welcome! :D",
@@ -295,7 +297,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
 				// Create attendance
 				log.debug("Creating attendance for student: " + studentCredentialOptional.get().getStudent());
-				attendance.setTimeIn(LocalTime.now());
+				attendance.setTimeIn(fingerprintAttendance.getDateTime().toLocalTime());
 				attendance.setStatus(getAttendanceStatus(fingerprintAttendance.getMode(), studentCredentialOptional.get().getStudent()));
 				attendance.persist();
 				realTimeAttendanceService.broadcastMessage(objectMapper.writeValueAsString(
@@ -308,7 +310,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
 			case OUT -> {
 				// Get the latest attendance
-				if (latestAttendanceOptional.isEmpty()) {
+				if (attendanceScannedDate.isEmpty()) {
 					log.debug("No attendance found for today");
 					new MessageResponse(
 						"Not Checked In",
@@ -318,10 +320,10 @@ public class AttendanceServiceImpl implements AttendanceService {
 				}
 
 				// Get Attendance
-				Attendance latestAttendance = latestAttendanceOptional.get();
+				Attendance latestAttendance = attendanceScannedDate.get();
 				if (latestAttendance.getTimeOut() != null) {
 					log.debug("Updating time out for student");
-					latestAttendance.setTimeOut(LocalTime.now());
+					latestAttendance.setTimeOut(fingerprintAttendance.getDateTime().toLocalTime());
 					latestAttendance.persist();
 					new MessageResponse(
 						"Time out updated",
@@ -332,7 +334,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
 				// Update attendance
 				log.debug("Updating attendance for student: " + studentCredentialOptional.get().getStudent());
-				latestAttendance.setTimeOut(LocalTime.now());
+				latestAttendance.setTimeOut(fingerprintAttendance.getDateTime().toLocalTime());
 				latestAttendance.persist();
 				realTimeAttendanceService.broadcastMessage(objectMapper.writeValueAsString(
 					modelMapper.map(latestAttendance, AttendanceDTO.class)));
@@ -343,7 +345,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 			}
 
 			case EXCUSED -> {
-				if (latestAttendanceOptional.isEmpty()) {
+				if (attendanceScannedDate.isEmpty()) {
 					log.debug(
 						"No attendance found, when excusing student, consult to the administrator or teachers.");
 					new MessageResponse(
@@ -354,7 +356,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 				}
 				// Update attendance
 				log.debug("Updating attendance for student: " + studentCredentialOptional.get().getStudent());
-				Attendance latestAttendance = latestAttendanceOptional.get();
+				Attendance latestAttendance = attendanceScannedDate.get();
 				if (latestAttendance.getStatus() == AttendanceStatus.EXCUSED) {
 					log.debug("Student already has excused attendance for today correlated to the date and status");
 					new MessageResponse(
@@ -367,7 +369,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 				latestAttendance.setNotes("This student was scanned as excused.");
 				latestAttendance
 					.setStatus(getAttendanceStatus(fingerprintAttendance.getMode(), studentCredentialOptional.get().getStudent()));
-				latestAttendance.setTimeOut(LocalTime.now());
+				latestAttendance.setTimeOut(fingerprintAttendance.getDateTime().toLocalTime());
 				latestAttendance.persist();
 
 				realTimeAttendanceService.broadcastMessage(
@@ -378,7 +380,6 @@ public class AttendanceServiceImpl implements AttendanceService {
 					CodeStatus.OK
 				);
 			}
-
 			default -> {
 				throw new Error("Invalid attendance mode: " + fingerprintAttendance.getMode());
 			}
@@ -396,15 +397,25 @@ public class AttendanceServiceImpl implements AttendanceService {
 					return AttendanceStatus.LATE;
 				}
 			}
-
 			case EXCUSED -> {
 				return AttendanceStatus.EXCUSED;
 			}
-
 			default -> {
 				throw new Error("Invalid attendance mode: " + mode);
 			}
 		}
+	}
+
+	private Optional<AttendanceStatus> isAbsent(Student student) {
+		LocalTime now = LocalTime.now();
+		StudentSchedule studentSchedule = student.getStudentSchedule();
+
+		if (studentSchedule.getAbsentTime().isBefore(now)) {
+			log.debug("Student is not absent and just before their absent time schedule.");
+			return Optional.empty();
+		}
+
+		return Optional.of(AttendanceStatus.ABSENT);
 	}
 
 	/**
@@ -444,7 +455,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 			);
 		} else if (foreignEntity == AttendanceForeignEntity.CLASSROOM) {
 			// Check if exists
-			if (classroomService.getClassroom(id).isEmpty()) {
+			if (classroomService.get(id).isEmpty()) {
 				return 0;
 			}
 
@@ -484,7 +495,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 		}
 
 		// Check if classroom exists
-		Optional<Classroom> classroom = classroomService.getClassroom(id);
+		Optional<Classroom> classroom = classroomService.get(id);
 		if (classroom.isEmpty()) {
 			log.debug("Classroom not found: " + id);
 			throw new Error("Classroom not found: " + id);

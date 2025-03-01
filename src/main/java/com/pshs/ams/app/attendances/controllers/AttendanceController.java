@@ -65,7 +65,7 @@ public class AttendanceController {
 		log.debug("AttendanceController - createAttendance() - Creating attendance");
 		Attendance attendance = mapper.map(attendanceDTO, Attendance.class);
 		log.debug("AttendanceController - createAttendance() - Attendance: {}", attendance);
-		CodeStatus status = attendanceService.createAttendance(attendance, override);
+		CodeStatus status = attendanceService.createAttendance(attendance, override, true);
 		log.debug("AttendanceController - createAttendance() - Status: {}", status);
 		return switch (status) {
 			case OK -> {
