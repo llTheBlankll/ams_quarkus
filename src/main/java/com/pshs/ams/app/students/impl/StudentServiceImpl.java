@@ -131,7 +131,7 @@ public class StudentServiceImpl implements StudentService {
 		}
 
 		// Check if the classroom exists
-		Optional<Classroom> classroom = classroomService.getClassroom(classroomId);
+		Optional<Classroom> classroom = classroomService.get(classroomId);
 		if (classroom.isEmpty()) {
 			logger.debug("Classroom not found: " + classroomId);
 			return 0;
@@ -159,6 +159,7 @@ public class StudentServiceImpl implements StudentService {
 	}
 
 	@Override
+	@Transactional
 	public CodeStatus assignStudentToClassroom(Long id, Long classroomId) {
 		// Check if exists
 		if (id <= 0 || classroomId <= 0) {
@@ -174,7 +175,7 @@ public class StudentServiceImpl implements StudentService {
 		}
 
 		// Check if the classroom exists
-		Optional<Classroom> classroom = classroomService.getClassroom(classroomId);
+		Optional<Classroom> classroom = classroomService.get(classroomId);
 		if (classroom.isEmpty()) {
 			logger.debug("Classroom not found: " + classroomId);
 			return CodeStatus.NOT_FOUND;
@@ -183,6 +184,7 @@ public class StudentServiceImpl implements StudentService {
 		// Assign the classroom to the student
 		student.get().setClassroom(classroom.get());
 		student.get().persist();
+		logger.debug("Student assigned to classroom: " + classroomId);
 		return CodeStatus.OK;
 	}
 

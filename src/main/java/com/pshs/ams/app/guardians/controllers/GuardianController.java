@@ -3,6 +3,7 @@ package com.pshs.ams.app.guardians.controllers;
 import com.pshs.ams.app.guardians.exceptions.GuardianExistsException;
 import com.pshs.ams.app.guardians.exceptions.GuardianNotFoundException;
 import com.pshs.ams.app.guardians.models.dto.GuardianDTO;
+import com.pshs.ams.app.guardians.models.dto.GuardianInput;
 import com.pshs.ams.app.guardians.models.entities.Guardian;
 import com.pshs.ams.app.guardians.services.GuardianService;
 import com.pshs.ams.global.models.custom.MessageResponse;
@@ -53,8 +54,8 @@ public class GuardianController {
 
 	@POST
 	@Path("/create")
-	public Response createGuardian(GuardianDTO guardianDTO) {
-		if (guardianDTO == null) {
+	public Response createGuardian(GuardianInput guardianInput) {
+		if (guardianInput == null) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(
 				new MessageResponse(
 					"Guardian was not provided",
@@ -63,7 +64,7 @@ public class GuardianController {
 			).build();
 		}
 
-		Guardian guardian = mapper.map(guardianDTO, Guardian.class);
+		Guardian guardian = mapper.map(guardianInput, Guardian.class);
 		try {
 			Optional<Guardian> guardianOptional = guardianService.create(guardian);
 			if (guardianOptional.isEmpty()) {

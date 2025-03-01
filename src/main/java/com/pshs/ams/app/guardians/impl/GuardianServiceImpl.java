@@ -62,7 +62,7 @@ public class GuardianServiceImpl implements GuardianService {
 			return Optional.empty();
 		}
 
-		guardian.persist();
+		guardian.persistAndFlush();
 		Guardian.getEntityManager().refresh(guardian);
 		return Optional.of(guardian);
 	}
