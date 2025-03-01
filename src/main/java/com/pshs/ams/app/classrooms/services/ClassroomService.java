@@ -11,8 +11,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
-import jakarta.transaction.Transactional;
-
 public interface ClassroomService {
 
 	/**
@@ -22,7 +20,7 @@ public interface ClassroomService {
 	 * @param page a pagination object containing pagination parameters (page, size)
 	 * @return a list of Classroom objects
 	 */
-	List<Classroom> getAllClasses(Sort sort, Page page);
+	List<Classroom> listAll(Sort sort, Page page);
 
 	/**
 	 * Creates a new class.
@@ -32,7 +30,7 @@ public interface ClassroomService {
 	 * @throws ClassroomExistsException if the classroom already exists
 	 * @throws IllegalArgumentException if the given classroom is null
 	 */
-	Optional<Classroom> createClass(Classroom classroom) throws ClassroomExistsException, IllegalArgumentException;
+	Optional<Classroom> create(Classroom classroom) throws ClassroomExistsException, IllegalArgumentException;
 
 	/**
 	 * Updates the details of an existing classroom.
@@ -40,7 +38,7 @@ public interface ClassroomService {
 	 * @param classroom the Classroom object containing updated information
 	 * @return an Optional containing the updated Classroom object, or an empty Optional if the classroom does not exist
 	 */
-	Optional<Classroom> updateClass(Classroom classroom) throws IllegalArgumentException;
+	Optional<Classroom> update(Classroom classroom) throws IllegalArgumentException;
 
 	/**
 	 * Deletes the class with the given id.
@@ -49,7 +47,7 @@ public interface ClassroomService {
 	 * @throws ClassroomExistsException if the class does not exist
 	 * @throws IllegalArgumentException if the given id is null or invalid
 	 */
-	void deleteClassroom(Integer id) throws ClassroomExistsException, IllegalArgumentException;
+	void delete(Integer id) throws ClassroomExistsException, IllegalArgumentException;
 
 	/**
 	 * Assigns a list of students to a specified classroom.
@@ -68,7 +66,7 @@ public interface ClassroomService {
 	 * @param id the id of the class to retrieve
 	 * @return the retrieved Classroom object
 	 */
-	Optional<Classroom> getClassroom(Long id);
+	Optional<Classroom> get(Long id);
 
 	/**
 	 * Uploads a profile picture for a classroom.
@@ -77,7 +75,7 @@ public interface ClassroomService {
 	 * @param imagePath the path to the image file to upload
 	 * @return the status of the operation
 	 */
-	CodeStatus uploadClassroomProfilePicture(Long id, Path imagePath);
+	CodeStatus uploadProfilePicture(Long id, Path imagePath);
 
 	/**
 	 * Searches for classrooms by name with optional pagination and sorting.
@@ -87,5 +85,5 @@ public interface ClassroomService {
 	 * @param sort a sorting object containing sorting parameters (sortBy, sortDirection)
 	 * @return a list of Classroom objects
 	 */
-	List<Classroom> searchClassroomByName(String name, Page page, Sort sort);
+	List<Classroom> searchByName(String name, Page page, Sort sort);
 }

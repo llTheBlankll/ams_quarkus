@@ -2,6 +2,7 @@ package com.pshs.ams.app.classrooms.controllers;
 
 import com.pshs.ams.app.classrooms.exceptions.ClassroomExistsException;
 import com.pshs.ams.app.classrooms.models.dto.ClassroomDTO;
+import com.pshs.ams.app.classrooms.models.dto.ClassroomStudentDTO;
 import com.pshs.ams.app.classrooms.models.entities.Classroom;
 import com.pshs.ams.app.classrooms.services.ClassroomService;
 import com.pshs.ams.app.students.models.dto.StudentDTO;
@@ -14,15 +15,18 @@ import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Response;
 import org.hibernate.collection.spi.PersistentCollection;
 import org.jboss.logging.Logger;
 import org.modelmapper.ModelMapper;
+import org.modelmapper.PropertyMap;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 @Path("/api/v1/classrooms")
@@ -36,24 +40,23 @@ public class ClassroomController {
 
 	private final ModelMapper mapper = new ModelMapper();
 
-	public ClassroomController() {
-		mapper.getConfiguration().setPropertyCondition(context ->
-			!(context.getSource() instanceof PersistentCollection));
-	}
-
 	@GET
 	@Path("/all")
-	public Response getAllClassrooms(@BeanParam SortRequest sort, @BeanParam PageRequest page) {
+	public Response listAll(@BeanParam SortRequest sort, @BeanParam PageRequest page) {
 		return Response.ok(
-				classroomService.getAllClasses(
+				classroomService.listAll(
 						Sort.by(sort.sortBy, sort.sortDirection),
-						Page.of(page.page, page.size)).stream().map(classroom -> mapper.map(classroom, ClassroomDTO.class))
-					.toList())
+						Page.of(page.page, page.size)
+					)
+					.stream()
+					.map(classroom -> mapper.map(classroom, ClassroomDTO.class))
+					.collect(Collectors.toList()))
 			.build();
 	}
 
 	@PUT
 	@Path("/update")
+	@Transactional
 	public Response updateClassroom(ClassroomDTO classroomInput) {
 		if (classroomInput == null) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(
@@ -63,7 +66,7 @@ public class ClassroomController {
 				.build();
 		}
 
-		Optional<Classroom> classroom = this.classroomService.updateClass(
+		Optional<Classroom> classroom = this.classroomService.update(
 			mapper.map(classroomInput, Classroom.class)
 		);
 
@@ -85,6 +88,7 @@ public class ClassroomController {
 
 	@POST
 	@Path("/create")
+	@Transactional
 	public Response createClassroom(ClassroomDTO classroomDTO) {
 		if (classroomDTO == null) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(
@@ -101,7 +105,7 @@ public class ClassroomController {
 		classroom.setUpdatedAt(now);
 
 		try {
-			Optional<Classroom> createdClassroom = classroomService.createClass(classroom);
+			Optional<Classroom> createdClassroom = classroomService.create(classroom);
 			if (createdClassroom.isEmpty()) {
 				return Response.status(Response.Status.CONFLICT).entity(
 						new MessageResponse(
@@ -135,7 +139,7 @@ public class ClassroomController {
 		}
 
 		try {
-			classroomService.deleteClassroom(id);
+			classroomService.delete(id);
 			return Response.ok(
 				new MessageResponse(
 					"Classroom deleted",
@@ -164,7 +168,7 @@ public class ClassroomController {
 
 		return Response.ok(
 				classroomService
-					.searchClassroomByName(name, Page.of(pageRequest.page, pageRequest.size),
+					.searchByName(name, Page.of(pageRequest.page, pageRequest.size),
 						Sort.by(sortRequest.sortBy, sortRequest.sortDirection))
 					.stream().map(cls -> mapper.map(cls, ClassroomDTO.class)).toList())
 			.build();
@@ -180,7 +184,7 @@ public class ClassroomController {
 						CodeStatus.BAD_REQUEST))
 				.build();
 		}
-		Optional<Classroom> classroom = classroomService.getClassroom(id);
+		Optional<Classroom> classroom = classroomService.get(id);
 		return classroom
 			.map(cls -> Response.ok(mapper.map(cls, ClassroomDTO.class)).build())
 			.orElseGet(() -> Response.status(Response.Status.NOT_FOUND).entity(

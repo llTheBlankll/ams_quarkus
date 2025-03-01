@@ -53,7 +53,7 @@ public class Classroom extends PanacheEntityBase {
 	@JoinColumn(name = "grade_level_id", nullable = false)
 	private GradeLevel gradeLevel;
 
-	@OneToMany(mappedBy = "classroom")
+	@OneToMany(mappedBy = "classroom", fetch = FetchType.LAZY)
 	private Set<Student> students = new LinkedHashSet<>();
 
 	@NotNull

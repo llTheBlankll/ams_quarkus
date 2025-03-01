@@ -33,7 +33,7 @@ public class ClassroomServiceImpl implements ClassroomService {
 	 * @return a list of Classroom objects
 	 */
 	@Override
-	public List<Classroom> getAllClasses(Sort sort, Page page) {
+	public List<Classroom> listAll(Sort sort, Page page) {
 		logger.debug("Get all classes: " + sort + ", " + page);
 		return Classroom.findAll(sort).page(page).list();
 	}
@@ -46,7 +46,7 @@ public class ClassroomServiceImpl implements ClassroomService {
 	 */
 	@Override
 	@Transactional
-	public Optional<Classroom> createClass(Classroom classroom) throws IllegalArgumentException, ClassroomExistsException {
+	public Optional<Classroom> create(Classroom classroom) throws IllegalArgumentException, ClassroomExistsException {
 		if (classroom == null) {
 			throw new IllegalArgumentException("Classroom cannot be null.");
 		}
@@ -59,7 +59,7 @@ public class ClassroomServiceImpl implements ClassroomService {
 		}
 
 		classroom.persistAndFlush();
-//		Classroom.getEntityManager().refresh(classroom); // Get the persisted object
+		Classroom.getEntityManager().refresh(classroom); // Get the persisted object
 		logger.debug("Class created: " + classroom.getClassroomName());
 		return Optional.of(classroom);
 	}
@@ -71,7 +71,7 @@ public class ClassroomServiceImpl implements ClassroomService {
 	 */
 	@Override
 	@Transactional
-	public void deleteClassroom(Integer id) throws ClassroomExistsException, IllegalArgumentException {
+	public void delete(Integer id) throws ClassroomExistsException, IllegalArgumentException {
 		if (id == null || id <= 0) {
 			throw new IllegalArgumentException("Invalid id: " + id);
 		}
@@ -95,7 +95,7 @@ public class ClassroomServiceImpl implements ClassroomService {
 	 * @return the retrieved Classroom object
 	 */
 	@Override
-	public Optional<Classroom> getClassroom(Long id) {
+	public Optional<Classroom> get(Long id) {
 		logger.debug("Get Class: " + id);
 		return Classroom.findByIdOptional(id);
 	}
@@ -136,14 +136,14 @@ public class ClassroomServiceImpl implements ClassroomService {
 	 * @return a list of Classroom objects
 	 */
 	@Override
-	public List<Classroom> searchClassroomByName(String name, Page page, Sort sort) {
+	public List<Classroom> searchByName(String name, Page page, Sort sort) {
 		logger.debug("Search Class: " + name);
 		return Classroom.find("classroomName LIKE ?1", sort, "%" + name + "%").page(page).list();
 	}
 
 	@Override
 	@Transactional
-	public CodeStatus uploadClassroomProfilePicture(Long id, Path imagePath) {
+	public CodeStatus uploadProfilePicture(Long id, Path imagePath) {
 		Optional<Classroom> existingClass = Classroom.findByIdOptional(id);
 		if (existingClass.isPresent()) {
 			Classroom.update("profilePicture = ?1 where id = ?2", imagePath.toString(), id);
@@ -154,7 +154,7 @@ public class ClassroomServiceImpl implements ClassroomService {
 
 	@Override
 	@Transactional
-	public Optional<Classroom> updateClass(Classroom classroom) throws IllegalArgumentException {
+	public Optional<Classroom> update(Classroom classroom) throws IllegalArgumentException {
 		if (classroom.getId() == null) {
 			throw new IllegalArgumentException("Classroom ID is null");
 		}
@@ -202,6 +202,7 @@ public class ClassroomServiceImpl implements ClassroomService {
 		if (updated) {
 			existingClassroom.setUpdatedAt(Instant.now());
 			existingClassroom.persistAndFlush();
+			Classroom.getEntityManager().refresh(existingClassroom);
 			logger.debug("Classroom updated: " + existingClassroom.getId());
 			return Optional.of(existingClassroom);
 		} else {
