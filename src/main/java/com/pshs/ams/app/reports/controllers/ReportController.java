@@ -6,6 +6,7 @@ import com.pshs.ams.global.models.custom.MessageResponse;
 import com.pshs.ams.global.models.enums.CodeStatus;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
@@ -22,6 +23,7 @@ public class ReportController {
 	@Inject
 	Logger log;
 
+	@GET
 	@Path("/generate/sf2")
 	public Response generateSF2Report(@QueryParam("classroomId") Integer id) {
 		try {

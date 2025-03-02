@@ -16,7 +16,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.*;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -51,11 +50,15 @@ public class ReportServiceImpl implements ReportService {
 	@Inject
 	ClassroomService classroomService;
 
+	@ConfigProperty(name = "report.sf2_template")
+	String sf2TemplatePath;
+
 	@ConfigProperty(name = "report.sf2_report")
 	String sf2ReportPath;
 
 	/**
 	 * Generates an SF2 report for a specific classroom
+	 *
 	 * @param classroomId The ID of the classroom to generate the report for
 	 */
 	public void generateSF2Report(Integer classroomId) throws ClassroomNotFoundException {
@@ -63,21 +66,12 @@ public class ReportServiceImpl implements ReportService {
 
 		// Get the classroom
 		Classroom classroom = classroomService.get(classroomId.longValue()).orElseThrow(
-				() -> new ClassroomNotFoundException("Classroom not found with ID: " + classroomId)
-		);
+				() -> new ClassroomNotFoundException("Classroom not found with ID: " + classroomId));
 
 		if (classroom == null) {
 			log.error("Classroom not found with ID: " + classroomId);
 			throw new IllegalArgumentException("Classroom not found with ID: " + classroomId);
 		}
-
-		// Create a new workbook
-		XSSFWorkbook workbook = new XSSFWorkbook();
-		XSSFSheet sheet = workbook.createSheet("SF2 Report - " + classroom.getClassroomName());
-
-		// Initial column widths (will be auto-sized at the end)
-		sheet.setColumnWidth(0, 1200); // Number column
-		sheet.setColumnWidth(1, 6000); // Name column wider
 
 		// Get current month and create date range
 		LocalDate today = LocalDate.now();
@@ -89,49 +83,50 @@ public class ReportServiceImpl implements ReportService {
 		// Calculate school days (excluding weekends)
 		int schoolDays = countSchoolDays(startOfMonth, endOfMonth);
 
-		// Create the report structure
-		createReportStructure(sheet, yearMonth, schoolDays, classroom, startOfMonth);
+		// Load the SF2 template instead of creating a new workbook
+		XSSFWorkbook workbook;
+		XSSFSheet sheet;
+		try {
+			// Load the template file
+			java.io.FileInputStream fis = new java.io.FileInputStream(sf2TemplatePath);
+			workbook = new XSSFWorkbook(fis);
+			sheet = workbook.getSheetAt(0); // Get the first sheet
+			fis.close();
+
+			log.info("Successfully loaded SF2 template from: " + sf2TemplatePath);
+
+			// Update header information in the template
+			updateHeaderInformation(sheet, classroom, yearMonth, schoolDays);
+		} catch (IOException e) {
+			log.error("Error loading SF2 template: " + e.getMessage(), e);
+			throw new RuntimeException("Failed to load SF2 template: " + e.getMessage(), e);
+		}
 
 		// Get male and female students from the classroom sorted by last name
 		List<Student> maleStudents = getStudentsByClassroomAndGenderSortedByLastName(classroomId, Sex.MALE);
 		List<Student> femaleStudents = getStudentsByClassroomAndGenderSortedByLastName(classroomId, Sex.FEMALE);
 
-		// Starting row for student data (after headers)
-		int currentRow = 3;
+		// Starting row for student data (at row 19 as specified in the template)
+		int currentRow = 19; // Corresponds to row 19 in Excel (1-indexed)
 
-		// Add and fill Male section
-		currentRow = addGenderSection(sheet, "MALE STUDENTS", maleStudents,
-				startOfMonth, endOfMonth, currentRow, true);
+		// Remove gender section headers as requested and directly fill student data
+		currentRow = fillStudentData(sheet, maleStudents, startOfMonth, endOfMonth, currentRow);
 
-		// Add spacing between sections
-		currentRow += 1;
+		// Add male totals
+		currentRow = addGenderTotals(sheet, "MALE DAILY TOTALS (Present)", maleStudents.size(), startOfMonth, endOfMonth, currentRow);
 
-		// Add and fill Female section
-		currentRow = addGenderSection(sheet, "FEMALE STUDENTS", femaleStudents,
-				startOfMonth, endOfMonth, currentRow, false);
+		// Remove spacing between sections
 
-		// Add spacing before totals
-		currentRow += 1;
+		// Fill female students data
+		currentRow = fillStudentData(sheet, femaleStudents, startOfMonth, endOfMonth, currentRow);
 
-		// Calculate and add daily totals
-		addDailyTotals(sheet, maleStudents.size() + femaleStudents.size(), startOfMonth, endOfMonth, currentRow);
+		// Add female totals
+		currentRow = addGenderTotals(sheet, "FEMALE DAILY TOTALS (Present)", femaleStudents.size(), startOfMonth, endOfMonth, currentRow);
 
-		// Count weekdays for auto-sizing
-		int weekdayCount = 0;
-		for (int day = 1; day <= endOfMonth.getDayOfMonth(); day++) {
-			LocalDate date = startOfMonth.plusDays(day - 1);
-			if (date.getDayOfWeek() != DayOfWeek.SATURDAY && date.getDayOfWeek() != DayOfWeek.SUNDAY) {
-				weekdayCount++;
-			}
-		}
+		// Remove spacing and total totals section
 
-		// Auto-size all columns for better fit
-		for (int i = 0; i <= weekdayCount + 3; i++) {
-			sheet.autoSizeColumn(i);
-			// Add small padding to auto-sized width
-			int currentWidth = sheet.getColumnWidth(i);
-			sheet.setColumnWidth(i, currentWidth + 256); // 256 = 1 character width
-		}
+		// Add borders to all cells in additional columns (AE onwards) for all student and total rows
+		addBordersToAdditionalColumns(sheet, 19, currentRow - 1);
 
 		try {
 			// Generate filename with classroom name
@@ -144,139 +139,6 @@ public class ReportServiceImpl implements ReportService {
 		} catch (IOException e) {
 			log.error("Error generating SF2 Report", e);
 		}
-	}
-
-	/**
-	 * Creates the basic structure of the report with headers and days
-	 * @param sheet the sheet to update
-	 * @param yearMonth the current year and month
-	 * @param schoolDays the number of school days in the month
-	 * @param classroom the classroom for which the report is being generated
-	 * @param startOfMonth the first day of the month
-	 */
-	private void createReportStructure(XSSFSheet sheet, YearMonth yearMonth, int schoolDays, Classroom classroom, LocalDate startOfMonth) {
-		// Create styles using the utility class
-		CellStyle headerStyle = ExcelUtils.createHeaderStyle(sheet.getWorkbook());
-		CellStyle subHeaderStyle = ExcelUtils.createSubHeaderStyle(sheet.getWorkbook());
-		CellStyle infoStyle = ExcelUtils.createInfoStyle(sheet.getWorkbook());
-
-		// Format month and year
-		String monthYear = yearMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy"));
-		int daysInMonth = yearMonth.lengthOfMonth();
-
-		// Count weekdays (excluding weekends)
-		int weekdayCount = 0;
-		Map<Integer, Integer> dayToColumnMap = new HashMap<>(); // Maps actual day to column index
-
-		for (int day = 1; day <= daysInMonth; day++) {
-			LocalDate date = startOfMonth.plusDays(day - 1);
-			if (date.getDayOfWeek() != DayOfWeek.SATURDAY && date.getDayOfWeek() != DayOfWeek.SUNDAY) {
-				weekdayCount++;
-				dayToColumnMap.put(day, weekdayCount);
-			}
-		}
-
-		// Create title row with the updated header text
-		Row titleRow = sheet.createRow(0);
-		titleRow.setHeightInPoints(30); // Reduced height
-		XSSFCell titleCell = (XSSFCell) titleRow.createCell(0);
-		titleCell.setCellValue("School Form 2 Daily Attendance Report of Learners For Senior High School (SF2-SHS)");
-		titleCell.setCellStyle(headerStyle);
-		sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, weekdayCount + 3));
-
-		// Create month/year row
-		Row monthRow = sheet.createRow(1);
-		monthRow.setHeightInPoints(25); // Reduced height
-		XSSFCell monthCell = (XSSFCell) monthRow.createCell(0);
-		monthCell.setCellValue("Month: " + monthYear + " - School Days: " + schoolDays);
-		monthCell.setCellStyle(subHeaderStyle);
-		sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, weekdayCount + 3));
-
-		// Create header row for number, name and day numbers
-		Row headerRow = sheet.createRow(2);
-		headerRow.setHeightInPoints(20); // Reduced height
-
-		// Create cell style for day headers with vertical text
-		CellStyle dayHeaderStyle = ExcelUtils.createDayHeaderStyle(sheet.getWorkbook());
-
-		// Number header
-		XSSFCell numberCell = (XSSFCell) headerRow.createCell(0);
-		numberCell.setCellValue("No.");
-		numberCell.setCellStyle(subHeaderStyle);
-
-		// Student name header
-		XSSFCell nameCell = (XSSFCell) headerRow.createCell(1);
-		nameCell.setCellValue("Name");
-		nameCell.setCellStyle(subHeaderStyle);
-
-		// Create day columns (only for weekdays)
-		int columnIndex = 2; // Start after Name column
-		for (int day = 1; day <= daysInMonth; day++) {
-			LocalDate date = startOfMonth.plusDays(day - 1);
-			if (date.getDayOfWeek() != DayOfWeek.SATURDAY && date.getDayOfWeek() != DayOfWeek.SUNDAY) {
-				XSSFCell dayCell = (XSSFCell) headerRow.createCell(columnIndex);
-				dayCell.setCellValue(day);
-				dayCell.setCellStyle(dayHeaderStyle);
-				columnIndex++;
-			}
-		}
-
-		// Create totals headers
-		XSSFCell presentCell = (XSSFCell) headerRow.createCell(columnIndex++);
-		presentCell.setCellValue("Present");
-		presentCell.setCellStyle(subHeaderStyle);
-
-		XSSFCell absentCell = (XSSFCell) headerRow.createCell(columnIndex++);
-		absentCell.setCellValue("Absent");
-		absentCell.setCellStyle(subHeaderStyle);
-
-		// Add classroom information on the right side of the report
-		XSSFCell classroomNameLabel = (XSSFCell) titleRow.createCell(columnIndex + 1);
-		classroomNameLabel.setCellValue("Classroom:");
-		classroomNameLabel.setCellStyle(infoStyle);
-
-		XSSFCell classroomNameValue = (XSSFCell) titleRow.createCell(columnIndex + 2);
-		classroomNameValue.setCellValue(classroom.getClassroomName());
-		classroomNameValue.setCellStyle(infoStyle);
-
-		// Row 1 - Teacher
-		XSSFCell teacherLabel = (XSSFCell) monthRow.createCell(columnIndex + 1);
-		teacherLabel.setCellValue("Teacher:");
-		teacherLabel.setCellStyle(infoStyle);
-
-		XSSFCell teacherValue = (XSSFCell) monthRow.createCell(columnIndex + 2);
-		teacherValue.setCellValue(classroom.getTeacher() != null ?
-			classroom.getTeacher().getLastName() + ", " + classroom.getTeacher().getFirstName() + " " +
-			(classroom.getTeacher().getMiddleInitial() != null ? classroom.getTeacher().getMiddleInitial() : "") :
-			"Not Assigned");
-		teacherValue.setCellStyle(infoStyle);
-
-		// Row 2 - Grade Level and Room Number
-		XSSFCell gradeLevelLabel = (XSSFCell) headerRow.createCell(columnIndex + 1);
-		gradeLevelLabel.setCellValue("Grade Level:");
-		gradeLevelLabel.setCellStyle(infoStyle);
-
-		XSSFCell gradeLevelValue = (XSSFCell) headerRow.createCell(columnIndex + 2);
-		gradeLevelValue.setCellValue(classroom.getGradeLevel().getName() != null ? classroom.getGradeLevel().getName() : "Not Set");
-		gradeLevelValue.setCellStyle(infoStyle);
-
-		// Row 3 - Room Number (create row here if needed)
-		Row roomRow = sheet.getRow(3);
-		if (roomRow == null) {
-			roomRow = sheet.createRow(3);
-		}
-
-		XSSFCell roomLabel = (XSSFCell) roomRow.createCell(columnIndex + 1);
-		roomLabel.setCellValue("Room:");
-		roomLabel.setCellStyle(infoStyle);
-
-		XSSFCell roomValue = (XSSFCell) roomRow.createCell(columnIndex + 2);
-		roomValue.setCellValue(classroom.getRoom() != null ? classroom.getRoom() : "Not Set");
-		roomValue.setCellStyle(infoStyle);
-
-		// Store the day-to-column mapping in a sheet property to use in other methods
-		sheet.getWorkbook().getCreationHelper().createFormulaEvaluator()
-			.evaluateAll();
 	}
 
 	/**
@@ -299,8 +161,9 @@ public class ReportServiceImpl implements ReportService {
 
 	/**
 	 * Gets students of a specific classroom and gender sorted by last name
+	 *
 	 * @param classroomId the classroom ID
-	 * @param gender the gender to filter by
+	 * @param gender      the gender to filter by
 	 * @return list of students
 	 */
 	private List<Student> getStudentsByClassroomAndGenderSortedByLastName(Integer classroomId, Sex gender) {
@@ -317,103 +180,63 @@ public class ReportServiceImpl implements ReportService {
 	}
 
 	/**
-	 * Adds a gender section with header and student data
+	 * Fills student data into the template at the specified row
+	 *
+	 * @param sheet      the sheet to update
+	 * @param students   the list of students
+	 * @param startDate  the start date of the month
+	 * @param endDate    the end date of the month
+	 * @param startRow   the starting row index (0-based)
+	 * @return the next available row index
 	 */
-	private int addGenderSection(XSSFSheet sheet, String sectionTitle, List<Student> students,
-			LocalDate startDate, LocalDate endDate, int startRow, boolean isMale) {
-
+	private int fillStudentData(XSSFSheet sheet, List<Student> students, LocalDate startDate, LocalDate endDate,
+			int startRow) {
 		int daysInMonth = YearMonth.from(startDate).lengthOfMonth();
 		int currentRow = startRow;
-
-		// Create section header row
-		Row sectionRow = sheet.createRow(currentRow++);
-		sectionRow.setHeightInPoints(20); // Reduced height
-
-		// Create gender header (only spans columns 0 and 1)
-		XSSFCell sectionCell = (XSSFCell) sectionRow.createCell(0);
-		sectionCell.setCellValue(sectionTitle);
-		sectionCell.setCellStyle(ExcelUtils.createSectionHeaderStyle(sheet.getWorkbook(), isMale));
-		sheet.addMergedRegion(new CellRangeAddress(sectionRow.getRowNum(), sectionRow.getRowNum(), 0, 1));
-
-		// Add day abbreviations in the same row as gender header
-		CellStyle dayAbbrevStyle = ExcelUtils.createDayAbbrevStyle(sheet.getWorkbook());
-
-		// Add day abbreviations based on actual days of the week (excluding weekends)
-		int columnIndex = 2; // Start after Name column
-		for (int day = 1; day <= daysInMonth; day++) {
-			LocalDate date = startDate.plusDays(day - 1);
-			DayOfWeek dayOfWeek = date.getDayOfWeek();
-
-			// Skip weekends
-			if (dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY) {
-				continue;
-			}
-
-			String abbreviation = "";
-			switch (dayOfWeek) {
-				case MONDAY:
-					abbreviation = "M";
-					break;
-				case TUESDAY:
-					abbreviation = "T";
-					break;
-				case WEDNESDAY:
-					abbreviation = "W";
-					break;
-				case THURSDAY:
-					abbreviation = "TH";
-					break;
-				case FRIDAY:
-					abbreviation = "F";
-					break;
-			}
-
-			XSSFCell abbrevCell = (XSSFCell) sectionRow.createCell(columnIndex++);
-			abbrevCell.setCellValue(abbreviation);
-			abbrevCell.setCellStyle(dayAbbrevStyle);
-		}
-
-		// Empty cells for present and absent columns in abbreviation row
-		XSSFCell emptyPresent = (XSSFCell) sectionRow.createCell(columnIndex++);
-		emptyPresent.setCellStyle(dayAbbrevStyle);
-
-		XSSFCell emptyAbsent = (XSSFCell) sectionRow.createCell(columnIndex++);
-		emptyAbsent.setCellStyle(dayAbbrevStyle);
-
-		// Create styles for the data cells
-		CellStyle dataStyle = ExcelUtils.createDataStyle(sheet.getWorkbook(), isMale);
-		CellStyle nameStyle = ExcelUtils.createNameStyle(sheet.getWorkbook(), isMale);
-		CellStyle numberStyle = dataStyle; // Use the same data style for numbers
-		CellStyle presentStyle = ExcelUtils.createPresentStyle(sheet.getWorkbook(), isMale);
-		CellStyle absentStyle = ExcelUtils.createAbsentStyle(sheet.getWorkbook(), isMale);
 
 		// Fill student data
 		for (int i = 0; i < students.size(); i++) {
 			Student student = students.get(i);
-			Row row = sheet.createRow(currentRow++);
-			row.setHeightInPoints(18); // Reduced height for compactness
+			// Excel uses 1-based indexing, but POI uses 0-based. Subtract 1 to convert.
+			Row row = sheet.getRow(currentRow - 1); // Convert to 0-based index
+			if (row == null) {
+				row = sheet.createRow(currentRow - 1);
+			}
 
-			// Add student number
-			XSSFCell numberCell = (XSSFCell) row.createCell(0);
+			// Add student number in column B (index 1)
+			XSSFCell numberCell = (XSSFCell) row.getCell(1);
+			if (numberCell == null) {
+				numberCell = (XSSFCell) row.createCell(1);
+			}
 			numberCell.setCellValue(i + 1);
-			numberCell.setCellStyle(numberStyle);
+			addBlackBorder(numberCell);
 
-			// Fill student name (Last Name, First Name M.I.)
+			// Fill student name in column C (index 2)
+			XSSFCell nameCell = (XSSFCell) row.getCell(2);
+			if (nameCell == null) {
+				nameCell = (XSSFCell) row.createCell(2);
+			}
 			String middleInitial = student.getMiddleInitial() != null ? student.getMiddleInitial() : "";
 			String fullName = student.getLastName() + ", " + student.getFirstName() + " " + middleInitial;
-			XSSFCell nameCell = (XSSFCell) row.createCell(1);
 			nameCell.setCellValue(fullName);
-			nameCell.setCellStyle(nameStyle);
+			addBlackBorder(nameCell);
 
 			// Get student attendance for the month
-			Map<LocalDate, AttendanceStatus> studentAttendance = getStudentAttendanceForMonth(student.getId(), startDate, endDate);
+			Map<LocalDate, AttendanceStatus> studentAttendance = getStudentAttendanceForMonth(student.getId(),
+					startDate, endDate);
 
-			// Track present and absent counts
-			int presentCount = 0;
-			int absentCount = 0;
+			// Fill attendance data for each day starting at column D (index 3)
+			int columnIndex = 3;
+            // First make sure to add borders to all potential day cells (D-Z, AA-AD)
+            // even if they don't contain attendance data
+            for (int dayColIndex = 3; dayColIndex <= 29; dayColIndex++) {
+                XSSFCell dayCell = (XSSFCell) row.getCell(dayColIndex);
+                if (dayCell == null) {
+                    dayCell = (XSSFCell) row.createCell(dayColIndex);
+                }
+                addBlackBorder(dayCell);
+            }
 
-			// Fill attendance data for each day (excluding weekends)
-			columnIndex = 2; // Reset column index for each student
 			for (int day = 1; day <= daysInMonth; day++) {
 				LocalDate date = startDate.plusDays(day - 1);
 
@@ -422,37 +245,54 @@ public class ReportServiceImpl implements ReportService {
 					continue;
 				}
 
-				XSSFCell dayCell = (XSSFCell) row.createCell(columnIndex++);
+				XSSFCell dayCell = (XSSFCell) row.getCell(columnIndex);
+				if (dayCell == null) {
+					dayCell = (XSSFCell) row.createCell(columnIndex);
+				}
 
 				if (studentAttendance.containsKey(date)) {
 					AttendanceStatus status = studentAttendance.get(date);
 					if (status == AttendanceStatus.ABSENT) {
-						dayCell.setCellValue("X");
-						dayCell.setCellStyle(absentStyle);
-						absentCount++;
+						dayCell.setCellValue("X"); // Mark absent with X
 					} else {
 						// Present (ON_TIME, LATE, or any other status that's not ABSENT)
-						dayCell.setCellValue("");
-						dayCell.setCellStyle(presentStyle);
-						presentCount++;
+						dayCell.setCellValue(""); // Leave cell empty for present
 					}
 				} else {
 					// No attendance record for this day (default to absent)
 					dayCell.setCellValue("X");
-					dayCell.setCellStyle(absentStyle);
-					absentCount++;
 				}
+				addBlackBorder(dayCell);
+				columnIndex++;
 			}
 
-			// Fill present count
-			XSSFCell presentCell = (XSSFCell) row.createCell(columnIndex++);
-			presentCell.setCellValue(presentCount);
-			presentCell.setCellStyle(dataStyle);
+			// Set formulas for absent and present counts instead of calculating values
+			// Column AC (index 28) - Absent count - counts cells with "X"
+			XSSFCell absentCell = (XSSFCell) row.getCell(28);
+			if (absentCell == null) {
+				absentCell = (XSSFCell) row.createCell(28);
+			}
 
-			// Fill absent count
-			XSSFCell absentCell = (XSSFCell) row.createCell(columnIndex++);
-			absentCell.setCellValue(absentCount);
-			absentCell.setCellStyle(dataStyle);
+			// Create a formula to count cells with "X" in the range D to AB columns
+			String startColumn = getExcelColumnName(3); // Column D
+			String endColumn = getExcelColumnName(27); // Column AB or whatever is the last day column
+			String formula = "COUNTIF(" + startColumn + currentRow + ":" + endColumn + currentRow + ",\"X\")";
+			absentCell.setCellFormula(formula);
+			addBlackBorder(absentCell);
+
+			// Column AD (index 29) - Present count - counts school days minus absent days
+			XSSFCell presentCell = (XSSFCell) row.getCell(29);
+			if (presentCell == null) {
+				presentCell = (XSSFCell) row.createCell(29);
+			}
+
+			// Count school days minus absent days
+			int schoolDays = countSchoolDays(startDate, endDate);
+			formula = schoolDays + "-AC" + currentRow;
+			presentCell.setCellFormula(formula);
+			addBlackBorder(presentCell);
+
+			currentRow++;
 		}
 
 		return currentRow;
@@ -461,14 +301,14 @@ public class ReportServiceImpl implements ReportService {
 	/**
 	 * Gets a student's attendance records for a specified month
 	 */
-	private Map<LocalDate, AttendanceStatus> getStudentAttendanceForMonth(Long studentId, LocalDate startDate, LocalDate endDate) {
+	private Map<LocalDate, AttendanceStatus> getStudentAttendanceForMonth(Long studentId, LocalDate startDate,
+			LocalDate endDate) {
 		// Create a date range for the month
 		DateRange dateRange = new DateRange(startDate, endDate);
 
 		// Get all attendance records for this student in the date range
 		List<Attendance> attendances = attendanceService.getFilteredAttendances(
-			dateRange, null, null, null, studentId, Page.ofSize(100), Sort.by("date")
-		);
+				dateRange, null, null, null, studentId, Page.ofSize(100), Sort.by("date"));
 
 		// Map the attendance records by date
 		Map<LocalDate, AttendanceStatus> attendanceMap = new HashMap<>();
@@ -480,29 +320,64 @@ public class ReportServiceImpl implements ReportService {
 	}
 
 	/**
-	 * Adds daily totals row at the bottom of the report
+	 * Add gender-specific totals (male or female) to the sheet
+	 *
+	 * @param sheet      the sheet to update
+	 * @param label      the label for the totals row
+	 * @param count      the number of students in this gender
+	 * @param startDate  the start date of the month
+	 * @param endDate    the end date of the month
+	 * @param rowNum     the row where to add the totals
+	 * @return the next available row index
 	 */
-	private void addDailyTotals(XSSFSheet sheet, int totalStudents, LocalDate startDate, LocalDate endDate, int rowNum) {
+	private int addGenderTotals(XSSFSheet sheet, String label, int count, LocalDate startDate, LocalDate endDate, int rowNum) {
 		int daysInMonth = YearMonth.from(startDate).lengthOfMonth();
 
-		// Create totals row
-		Row totalsRow = sheet.createRow(rowNum);
-		totalsRow.setHeightInPoints(24); // Reduced height for compactness
+		// Get or create gender totals row
+		Row totalsRow = sheet.getRow(rowNum - 1); // Convert to 0-based index
+		if (totalsRow == null) {
+			totalsRow = sheet.createRow(rowNum - 1);
+		}
 
-		// Create cell style for totals
-		CellStyle totalsStyle = ExcelUtils.createTotalsStyle(sheet.getWorkbook());
+		// Empty cell for column B
+		XSSFCell emptyCell = (XSSFCell) totalsRow.getCell(1);
+		if (emptyCell == null) {
+			emptyCell = (XSSFCell) totalsRow.createCell(1);
+		}
+		emptyCell.setCellValue("");
+		addBlackBorder(emptyCell);
 
-		// Empty cell for number column
-		XSSFCell emptyNumberCell = (XSSFCell) totalsRow.createCell(0);
-		emptyNumberCell.setCellStyle(totalsStyle);
+		// Label for gender totals row in column C
+		XSSFCell labelCell = (XSSFCell) totalsRow.getCell(2);
+		if (labelCell == null) {
+			labelCell = (XSSFCell) totalsRow.createCell(2);
+		}
+		labelCell.setCellValue(label);
+		addBlackBorder(labelCell);
 
-		// Label for totals row
-		XSSFCell labelCell = (XSSFCell) totalsRow.createCell(1);
-		labelCell.setCellValue("DAILY TOTALS (Present)");
-		labelCell.setCellStyle(totalsStyle);
+		// Find the rows where this gender's data starts and ends
+		int startRow = rowNum - count;
+		int endRow = rowNum - 1;
 
-		// Calculate daily totals for weekdays only
-		int columnIndex = 2; // Start after Name column
+		// First make sure to add borders to all potential day cells (D-Z, AA-AD)
+		// even if they don't contain attendance data
+		for (int dayColIndex = 3; dayColIndex <= 29; dayColIndex++) {
+			XSSFCell dayCell = (XSSFCell) totalsRow.getCell(dayColIndex);
+			if (dayCell == null) {
+				dayCell = (XSSFCell) totalsRow.createCell(dayColIndex);
+			}
+			addBlackBorder(dayCell);
+		}
+
+		// Also add border to column AE for this row
+		XSSFCell aeCell = (XSSFCell) totalsRow.getCell(30); // Column AE (index 30)
+		if (aeCell == null) {
+			aeCell = (XSSFCell) totalsRow.createCell(30);
+		}
+		addBlackBorder(aeCell);
+
+		// Calculate daily totals for weekdays only starting at column D (index 3)
+		int columnIndex = 3;
 		for (int day = 1; day <= daysInMonth; day++) {
 			LocalDate date = startDate.plusDays(day - 1);
 
@@ -511,39 +386,200 @@ public class ReportServiceImpl implements ReportService {
 				continue;
 			}
 
-			XSSFCell dayTotalCell = (XSSFCell) totalsRow.createCell(columnIndex++);
-			dayTotalCell.setCellStyle(totalsStyle);
+			XSSFCell dayTotalCell = (XSSFCell) totalsRow.getCell(columnIndex);
+			if (dayTotalCell == null) {
+				dayTotalCell = (XSSFCell) totalsRow.createCell(columnIndex);
+			}
 
-			// Count present students for this day (non-absent attendances)
-			int presentCount = countDailyAttendances(date, totalStudents);
-			dayTotalCell.setCellValue(presentCount);
+			// Calculate present students using a formula that counts non-X cells
+			String column = getExcelColumnName(columnIndex);
+			String formula = count + "-COUNTIF(" + column + startRow + ":" + column + endRow + ",\"X\")";
+			dayTotalCell.setCellFormula(formula);
+			addBlackBorder(dayTotalCell);
+
+			columnIndex++;
 		}
 
-		// Add empty cells for the totals columns to maintain alignment
-		XSSFCell emptyCell1 = (XSSFCell) totalsRow.createCell(columnIndex++);
-		emptyCell1.setCellStyle(totalsStyle);
+		// Total absent for this gender in column AC (index 28)
+		XSSFCell totalAbsentCell = (XSSFCell) totalsRow.getCell(28);
+		if (totalAbsentCell == null) {
+			totalAbsentCell = (XSSFCell) totalsRow.createCell(28);
+		}
+		totalAbsentCell.setCellFormula("SUM(AC" + startRow + ":AC" + endRow + ")");
+		addBlackBorder(totalAbsentCell);
 
-		XSSFCell emptyCell2 = (XSSFCell) totalsRow.createCell(columnIndex++);
-		emptyCell2.setCellStyle(totalsStyle);
+		// Total present for this gender in column AD (index 29)
+		XSSFCell totalPresentCell = (XSSFCell) totalsRow.getCell(29);
+		if (totalPresentCell == null) {
+			totalPresentCell = (XSSFCell) totalsRow.createCell(29);
+		}
+		totalPresentCell.setCellFormula("SUM(AD" + startRow + ":AD" + endRow + ")");
+		addBlackBorder(totalPresentCell);
+
+		return rowNum + 1;
 	}
 
 	/**
-	 * Counts the number of present students for a specific day
+	 * Adds black borders to all cells in column AE
+	 * from startRow to endRow
+	 *
+	 * @param sheet     the sheet to update
+	 * @param startRow  the starting Excel row (1-indexed)
+	 * @param endRow    the ending Excel row (1-indexed)
 	 */
-	private int countDailyAttendances(LocalDate date, int totalStudents) {
-		// Create a date range for just this day
-		DateRange dateRange = new DateRange(date, date);
+	private void addBordersToAdditionalColumns(XSSFSheet sheet, int startRow, int endRow) {
+		// Add borders to column AE only
+		int colIndex = 30; // Column AE (0-indexed)
 
-		// Count attendances with status ON_TIME or LATE (present)
-		List<AttendanceStatus> presentStatuses = List.of(AttendanceStatus.ON_TIME, AttendanceStatus.LATE);
-		long presentCount = attendanceService.countTotalByAttendanceByStatus(presentStatuses, dateRange);
+		for (int rowIndex = startRow - 1; rowIndex <= endRow - 1; rowIndex++) {
+			Row row = sheet.getRow(rowIndex);
+			if (row == null) {
+				row = sheet.createRow(rowIndex);
+			}
 
-		return (int) presentCount;
+			XSSFCell cell = (XSSFCell) row.getCell(colIndex);
+			if (cell == null) {
+				cell = (XSSFCell) row.createCell(colIndex);
+			}
+			addBlackBorder(cell);
+		}
+	}
+
+	/**
+	 * Adds a black border to a cell
+	 *
+	 * @param cell the cell to add borders to
+	 */
+	private void addBlackBorder(XSSFCell cell) {
+		CellStyle style = cell.getCellStyle();
+		if (style == null) {
+			style = cell.getSheet().getWorkbook().createCellStyle();
+		} else {
+			// We need to clone the style to modify it
+			style = cell.getSheet().getWorkbook().createCellStyle();
+			style.cloneStyleFrom(cell.getCellStyle());
+		}
+
+		// Add black borders on all sides
+		style.setBorderTop(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+		style.setBorderBottom(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+		style.setBorderLeft(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+		style.setBorderRight(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+
+		cell.setCellStyle(style);
+	}
+
+	/**
+	 * Converts a 0-based column index to Excel column name (A, B, C, ... Z, AA, AB, etc.)
+	 *
+	 * @param columnIndex the 0-based column index
+	 * @return the Excel column name
+	 */
+	private String getExcelColumnName(int columnIndex) {
+		StringBuilder columnName = new StringBuilder();
+
+		while (columnIndex >= 0) {
+			int remainder = columnIndex % 26;
+			columnName.insert(0, (char) ('A' + remainder));
+			columnIndex = (columnIndex / 26) - 1;
+		}
+
+		return columnName.toString();
+	}
+
+	/**
+	 * Updates the header information in the template (classroom details, month, school days, etc.)
+	 *
+	 * @param sheet       the sheet to update
+	 * @param classroom   the classroom details
+	 * @param yearMonth   the current year and month
+	 * @param schoolDays  the number of school days
+	 */
+	private void updateHeaderInformation(XSSFSheet sheet, Classroom classroom, YearMonth yearMonth, int schoolDays) {
+		// Format month and year
+		String monthYear = yearMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy"));
+
+		// Specific cells in the template may vary - assuming these positions based on common SF2 templates
+		// Get or create row for month/year (commonly in row 2 or 3)
+		Row monthRow = sheet.getRow(2);
+		if (monthRow != null) {
+			// Find cell that typically shows month/year and update it
+			XSSFCell monthCell = findCellInRow(monthRow, "Month:");
+			if (monthCell != null) {
+				monthCell.setCellValue("Month: " + monthYear + " - School Days: " + schoolDays);
+			}
+		}
+
+		// Update classroom information (commonly in rows 3-7)
+		updateCellValueIfFound(sheet, "Classroom:", classroom.getClassroomName());
+
+		// Update teacher information
+		String teacherName = classroom.getTeacher() != null ?
+			classroom.getTeacher().getLastName() + ", " +
+			classroom.getTeacher().getFirstName() + " " +
+			(classroom.getTeacher().getMiddleInitial() != null ? classroom.getTeacher().getMiddleInitial() : "") :
+			"Not Assigned";
+		updateCellValueIfFound(sheet, "Teacher:", teacherName);
+
+		// Update grade level
+		String gradeLevel = classroom.getGradeLevel() != null && classroom.getGradeLevel().getName() != null ?
+			classroom.getGradeLevel().getName() : "Not Set";
+		updateCellValueIfFound(sheet, "Grade Level:", gradeLevel);
+
+		// Update room
+		String room = classroom.getRoom() != null ? classroom.getRoom() : "Not Set";
+		updateCellValueIfFound(sheet, "Room:", room);
+	}
+
+	/**
+	 * Helper method to find a cell in a row that contains specific text
+	 *
+	 * @param row  the row to search in
+	 * @param text the text to search for
+	 * @return the cell if found, null otherwise
+	 */
+	private XSSFCell findCellInRow(Row row, String text) {
+		for (int i = 0; i < row.getLastCellNum(); i++) {
+			XSSFCell cell = (XSSFCell) row.getCell(i);
+			if (cell != null && cell.getCellType() == org.apache.poi.ss.usermodel.CellType.STRING
+					&& cell.getStringCellValue().contains(text)) {
+				return cell;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Updates a cell value if a matching label cell is found in the sheet
+	 *
+	 * @param sheet      the sheet to search in
+	 * @param labelText  the label text to search for
+	 * @param value      the value to set in the adjacent cell
+	 */
+	private void updateCellValueIfFound(XSSFSheet sheet, String labelText, String value) {
+		// Search rows that typically contain header information (rows 0-10)
+		for (int rowIndex = 0; rowIndex <= 10; rowIndex++) {
+			Row row = sheet.getRow(rowIndex);
+			if (row != null) {
+				XSSFCell labelCell = findCellInRow(row, labelText);
+				if (labelCell != null) {
+					// Assume the value cell is next to the label cell
+					int labelColIndex = labelCell.getColumnIndex();
+					XSSFCell valueCell = (XSSFCell) row.getCell(labelColIndex + 1);
+					if (valueCell == null) {
+						valueCell = (XSSFCell) row.createCell(labelColIndex + 1);
+					}
+					valueCell.setCellValue(value);
+					return;
+				}
+			}
+		}
 	}
 
 	/**
 	 * Saves the report to the specified path
-	 * @param workbook the workbook to save
+	 *
+	 * @param workbook   the workbook to save
 	 * @param reportPath the path to save the report to
 	 * @throws IOException if an I/O error occurs
 	 */
