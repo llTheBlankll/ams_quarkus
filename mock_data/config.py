@@ -14,8 +14,8 @@ class TimeConfig:
 
 @dataclass
 class DateRangeConfig:
-    start_date: str = "2020-01-01"
-    end_date: str = "2024-12-31"
+    start_date: str = "2024-01-01"
+    end_date: str = "2025-12-31"
 
 
 @dataclass

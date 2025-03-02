@@ -33,7 +33,7 @@ public class AbsentSchedule {
 			attendance.setStudent(student);
 			attendance.setDate(LocalDate.now());
 			attendance.setStatus(AttendanceStatus.ABSENT);
-			attendanceService.createAttendance(attendance, true, false);
+			attendanceService.createAttendance(attendance, true, true);
 		}
 	}
 }

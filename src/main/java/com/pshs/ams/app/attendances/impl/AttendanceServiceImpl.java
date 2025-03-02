@@ -81,7 +81,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 	 */
 	@Override
 	@Transactional
-	public CodeStatus createAttendance(Attendance attendance, Boolean override, Boolean checkForAbsent) throws IllegalArgumentException {
+	public CodeStatus createAttendance(Attendance attendance, Boolean override, Boolean checkStudentSchedule) throws IllegalArgumentException {
 		if (attendance == null) {
 			log.debug("Attendance is null");
 			return CodeStatus.BAD_INPUT;
@@ -108,9 +108,13 @@ public class AttendanceServiceImpl implements AttendanceService {
 			}
 
 			attendance.setId(null);
-			if (checkForAbsent) {
-				Optional<AttendanceStatus> attendanceStatusOptional = isAbsent(attendance.getStudent());
-				attendanceStatusOptional.ifPresent(attendance::setStatus);
+			if (attendance.getTimeIn() == null) {
+				Optional<AttendanceStatus> isStudentAbsent = isAbsent(attendance.getStudent());
+				isStudentAbsent.ifPresent(attendance::setStatus);
+			} else {
+				if (checkStudentSchedule) {
+					attendance.setStatus(getAttendanceStatus(AttendanceMode.IN, attendance.getStudent()));
+				}
 			}
 
 			attendance.persistAndFlush();
