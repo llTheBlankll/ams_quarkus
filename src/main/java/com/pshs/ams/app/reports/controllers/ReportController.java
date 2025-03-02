@@ -46,6 +46,14 @@ public class ReportController {
 					CodeStatus.FAILED
 				)
 			).build();
+		} catch (RuntimeException e) {
+			log.error("Error generating SF2 report", e);
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(
+				new MessageResponse(
+					"Error generating SF2 report",
+					CodeStatus.FAILED
+				)
+			).build();
 		}
 	}
 }

@@ -21,6 +21,7 @@ import org.apache.poi.xssf.usermodel.*;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.time.DayOfWeek;
@@ -61,7 +62,7 @@ public class ReportServiceImpl implements ReportService {
 	 *
 	 * @param classroomId The ID of the classroom to generate the report for
 	 */
-	public void generateSF2Report(Integer classroomId) throws ClassroomNotFoundException {
+	public void generateSF2Report(Integer classroomId) throws ClassroomNotFoundException, RuntimeException {
 		log.info("Generating SF2 Report for classroom ID: " + classroomId);
 
 		// Get the classroom
@@ -90,6 +91,8 @@ public class ReportServiceImpl implements ReportService {
 			// Load the template file
 			java.io.FileInputStream fis = new java.io.FileInputStream(sf2TemplatePath);
 			workbook = new XSSFWorkbook(fis);
+			// Set formula calculation to automatic
+			workbook.setForceFormulaRecalculation(true);
 			sheet = workbook.getSheetAt(0); // Get the first sheet
 			fis.close();
 
@@ -359,15 +362,19 @@ public class ReportServiceImpl implements ReportService {
 		int startRow = rowNum - count;
 		int endRow = rowNum - 1;
 
-		// First make sure to add borders to all potential day cells (D-Z, AA-AD)
-		// and set default value of 0 for days without attendance data
+		// The header row is row 17 (0-based index 16) where day numbers are displayed starting column D
+		int headerRowIndex = 17;
+		Row headerRow = sheet.getRow(headerRowIndex - 1);
+		if (headerRow == null) {
+			headerRow = sheet.createRow(headerRowIndex - 1);
+		}
+
+		// First make sure all the day cells have borders
 		for (int dayColIndex = 3; dayColIndex <= 29; dayColIndex++) {
 			XSSFCell dayCell = (XSSFCell) totalsRow.getCell(dayColIndex);
 			if (dayCell == null) {
 				dayCell = (XSSFCell) totalsRow.createCell(dayColIndex);
 			}
-			// Set default value of 0 for this cell
-			dayCell.setCellValue(0);
 			addBlackBorder(dayCell);
 		}
 
@@ -378,7 +385,8 @@ public class ReportServiceImpl implements ReportService {
 		}
 		addBlackBorder(aeCell);
 
-		// Calculate daily totals for weekdays only starting at column D (index 3)
+		// Calculate daily totals for all weekdays (D-AD) using formulas
+		// Use conditional formulas that check if the day is valid
 		int columnIndex = 3;
 		for (int day = 1; day <= daysInMonth; day++) {
 			LocalDate date = startDate.plusDays(day - 1);
@@ -393,9 +401,33 @@ public class ReportServiceImpl implements ReportService {
 				dayTotalCell = (XSSFCell) totalsRow.createCell(columnIndex);
 			}
 
-			// Calculate present students using a formula that counts non-X cells
+			// Calculate present students using a conditional formula
 			String column = getExcelColumnName(columnIndex);
-			String formula = count + "-COUNTIF(" + column + startRow + ":" + column + endRow + ",\"X\")";
+
+			// The formula checks if header cell has content before calculating attendance
+			String formula = "IF(LEN(" + column + headerRowIndex + ")>0," +
+				count + "-COUNTIF(" + column + startRow + ":" + column + endRow + ",\"X\"),0)";
+
+			dayTotalCell.setCellFormula(formula);
+			addBlackBorder(dayTotalCell);
+
+			columnIndex++;
+		}
+
+		// Apply conditional formulas for all remaining day columns up to AD (index 29)
+		while (columnIndex <= 29) {
+			XSSFCell dayTotalCell = (XSSFCell) totalsRow.getCell(columnIndex);
+			if (dayTotalCell == null) {
+				dayTotalCell = (XSSFCell) totalsRow.createCell(columnIndex);
+			}
+
+			// Use the same conditional formula approach for all cells
+			String column = getExcelColumnName(columnIndex);
+
+			// The formula returns 0 if the header cell is empty (no day number)
+			String formula = "IF(LEN(" + column + headerRowIndex + ")>0," +
+				count + "-COUNTIF(" + column + startRow + ":" + column + endRow + ",\"X\"),0)";
+
 			dayTotalCell.setCellFormula(formula);
 			addBlackBorder(dayTotalCell);
 

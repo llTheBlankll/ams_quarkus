@@ -4,5 +4,5 @@ import com.pshs.ams.app.classrooms.exceptions.ClassroomNotFoundException;
 
 public interface ReportService {
 
-	void generateSF2Report(Integer classroomId) throws ClassroomNotFoundException, IllegalArgumentException;
+	void generateSF2Report(Integer classroomId) throws ClassroomNotFoundException, RuntimeException;
 }
