@@ -360,12 +360,14 @@ public class ReportServiceImpl implements ReportService {
 		int endRow = rowNum - 1;
 
 		// First make sure to add borders to all potential day cells (D-Z, AA-AD)
-		// even if they don't contain attendance data
+		// and set default value of 0 for days without attendance data
 		for (int dayColIndex = 3; dayColIndex <= 29; dayColIndex++) {
 			XSSFCell dayCell = (XSSFCell) totalsRow.getCell(dayColIndex);
 			if (dayCell == null) {
 				dayCell = (XSSFCell) totalsRow.createCell(dayColIndex);
 			}
+			// Set default value of 0 for this cell
+			dayCell.setCellValue(0);
 			addBlackBorder(dayCell);
 		}
 
